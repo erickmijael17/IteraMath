@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IteraMath</title>
+</head>
+<body>
+    <header class="main-header">
+        <div class="logo">IteraMath</div>
+        <nav>
+            <a href="#" class="active">Resolver</a>
+            <a href="#">Historial</a>
+            <a href="#">Teoría</a>
+        </nav>
+    </header>
+
+    <main class="layout-split">
+        <aside class="panel-left">
+            <form id="resolver-form">
+                <h2>Configuración</h2>
+                
+                <div class="form-group">
+                    <label for="method-selector">Método Numérico</label>
+                    <select id="method-selector" name="method" required>
+                        <option value="bisection">Bisección</option>
+                        <option value="false-position">Regla Falsa</option>
+                        <option value="fixed-point">Punto Fijo</option>
+                        <option value="newton-raphson">Newton-Raphson</option>
+                        <option value="secant">Secante</option>
+                        <option value="muller">Müller</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="input-fx">Función f(x)</label>
+                    <input type="text" id="input-fx" name="fx" placeholder="ej. x^2 + 3*x - 5" required />
+                    <small class="help-text">Sintaxis: x^2, sin(x), cos(x), exp(-x), sqrt(x), log(x)</small>
+                </div>
+
+                <!-- Contenedor de campos dinámicos -->
+                <div id="dynamic-parameters"></div>
+
+                <div class="form-group">
+                    <label for="error-criterion">Criterio de Parada</label>
+                    <select id="error-criterion" name="errorCriterion" required>
+                        <option value="absolute">Error absoluto</option>
+                        <option value="relative">Error relativo</option>
+                        <option value="percentage">Error porcentual</option>
+                        <option value="residual">Residuo</option>
+                    </select>
+                </div>
+
+                <div class="form-group-row">
+                    <div class="form-group">
+                        <label for="input-tolerance">Tolerancia</label>
+                        <input type="text" id="input-tolerance" name="tolerance" placeholder="1e-6" value="1e-6" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="input-max-iter">Max Iteraciones</label>
+                        <input type="number" id="input-max-iter" name="maxIterations" placeholder="100" value="100" required />
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Resolver</button>
+                    <button type="button" id="btn-clear" class="btn-secondary">Limpiar</button>
+                </div>
+            </form>
+        </aside>
+
+        <section class="panel-right">
+            <!-- Estado Inicial Vacío -->
+            <div id="empty-state" class="empty-state">
+                <p>Configura un método y pulsa <strong>Resolver</strong> para comenzar.</p>
+            </div>
+
+            <!-- Contenedor de Resultados (Oculto inicialmente) -->
+            <div id="results-container" class="results-container hidden">
+                <div id="global-status-panel" class="results-summary">
+                    <div class="badge badge-info" id="status-badge">Configuración válida</div>
+                    <p id="status-text" class="summary-text">Los parámetros fueron recibidos correctamente. El motor numérico se implementará en la siguiente fase.</p>
+                </div>
+
+                <div class="tabs">
+                    <div class="tab-headers">
+                        <button class="tab-btn active" data-tab="tab-summary">Resumen</button>
+                        <button class="tab-btn" data-tab="tab-graph">Gráfica</button>
+                        <button class="tab-btn" data-tab="tab-table">Tabla</button>
+                        <button class="tab-btn" data-tab="tab-code">Código Octave</button>
+                    </div>
+                    <div class="tab-content-container">
+                        <div id="tab-summary" class="tab-content active">
+                            <h3>Resumen</h3>
+                            <p>Aquí se mostrará el resumen detallado del resultado.</p>
+                        </div>
+                        <div id="tab-graph" class="tab-content hidden" style="height: 500px; display: flex; flex-direction: column;">
+                            <h3>Gráfica</h3>
+                            <div id="plotly-canvas" style="flex: 1; min-height: 400px;">
+                                <div class="empty-state">
+                                    <p>Resuelve un ejercicio para visualizar la función.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="tab-table" class="tab-content hidden">
+                            <h3>Tabla de Iteraciones</h3>
+                            <div class="table-responsive">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Iteración</th>
+                                            <th>Valores...</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td colspan="2">Los datos tabulares aparecerán aquí.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div id="tab-code" class="tab-content hidden">
+                            <h3>Código GNU Octave</h3>
+                            <pre><code>% El script generado aparecerá aquí.</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

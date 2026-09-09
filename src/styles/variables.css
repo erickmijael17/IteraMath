@@ -1,0 +1,49 @@
+:root {
+    /* Brand Colors */
+    --color-primary: #4F46E5;
+    --color-primary-hover: #4338CA;
+    --color-secondary: #E0E7FF;
+    
+    /* Semantic Colors */
+    --color-success: #10B981;
+    --color-success-bg: #D1FAE5;
+    --color-success-text: #065F46;
+
+    --color-error: #EF4444;
+    --color-error-bg: #FEE2E2;
+    --color-error-text: #991B1B;
+
+    --color-warning: #F59E0B;
+    --color-warning-bg: #FEF3C7;
+    --color-warning-text: #92400E;
+
+    --color-info: #0EA5E9;
+    --color-info-bg: #E0F2FE;
+    --color-info-text: #075985;
+
+    /* Neutrals */
+    --background: #F9FAFB;
+    --surface: #FFFFFF;
+    
+    --text-primary: #111827;
+    --text-secondary: #6B7280;
+    
+    --border-color: #E5E7EB;
+    
+    /* Spacing */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+
+    /* Radius */
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-full: 9999px;
+
+    /* Typography */
+    --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: 'Fira Code', 'JetBrains Mono', Consolas, monospace;
+}

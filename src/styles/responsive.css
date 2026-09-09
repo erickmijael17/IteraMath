@@ -1,0 +1,25 @@
+@media (max-width: 768px) {
+    .layout-split {
+        flex-direction: column;
+    }
+
+    .panel-left {
+        max-width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        padding: var(--spacing-md);
+    }
+
+    .panel-right {
+        padding: var(--spacing-md);
+    }
+
+    .main-header {
+        padding: var(--spacing-md);
+    }
+
+    .main-header nav a {
+        margin-left: var(--spacing-sm);
+        font-size: 0.875rem;
+    }
+}
