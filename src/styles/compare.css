@@ -1,0 +1,150 @@
+.compare-view {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.compare-view-title {
+    margin-bottom: 1.5rem;
+}
+
+.compare-form {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.compare-section {
+    background: var(--surface);
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+}
+
+.compare-section-title {
+    margin-bottom: 1rem;
+    color: var(--color-primary);
+}
+
+.compare-section-desc {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.compare-methods-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.compare-method-card {
+    border: 1px solid var(--border-color);
+    padding: 1rem;
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+}
+
+.compare-method-header {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.compare-method-label {
+    font-weight: 600;
+    margin-left: 0.5rem;
+}
+
+.compare-method-params {
+    display: none;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.compare-method-params.active {
+    display: flex;
+}
+
+.compare-input {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.compare-results-container {
+    margin-top: 3rem;
+    min-width: 0;
+}
+
+.compare-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.compare-metric-card {
+    background: var(--surface);
+    padding: 1.25rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+}
+
+.compare-metric-title {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+}
+
+.compare-metric-value {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: var(--color-primary);
+}
+
+.compare-metric-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+}
+
+.compare-note {
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background-color: var(--background);
+    border-left: 4px solid var(--color-primary);
+    border-radius: var(--radius-sm);
+}
+
+.compare-note-title {
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.compare-note-text {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.compare-actions {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 4rem;
+}
+
+/* Fixes for mobile layout */
+@media (max-width: 768px) {
+    .compare-view {
+        padding: 1rem;
+        gap: 1rem;
+    }
+    .compare-section {
+        padding: 1rem;
+    }
+    .compare-methods-grid {
+        grid-template-columns: 1fr;
+    }
+}

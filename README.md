@@ -79,12 +79,12 @@ Actualmente el proyecto se encuentra en la **Fase 1 — Definición y Alcance de
 
 Los seis métodos principales están implementados.
 8. [x] **Fase 8:** Generador de código GNU Octave
-9. [ ] **Fase 9:** Persistencia con IndexedDB e historial local
-10. [ ] **Fase 10:** Módulo de comparación de métodos
-11. [ ] **Fase 11:** PWA y soporte offline
-12. [ ] **Fase 12:** Testing y control de calidad
-13. [ ] **Fase 13:** Optimización UI/UX
-14. [ ] **Fase 14:** Publicación
+9. [x] **Fase 9:** Persistencia con IndexedDB e historial local
+10. [x] **Fase 10:** Módulo de comparación de métodos
+11. [x] **Fase 11:** PWA y soporte offline
+12. [ ] **Fase 12:** Testing integral y control de calidad
+13. [ ] **Fase 13:** Optimización visual final
+14. [ ] **Fase 14:** Publicaciónón
 
 ---
 

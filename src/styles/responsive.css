@@ -16,10 +16,19 @@
 
     .main-header {
         padding: var(--spacing-md);
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        align-items: flex-start;
+    }
+
+    .main-header nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--spacing-sm);
     }
 
     .main-header nav a {
-        margin-left: var(--spacing-sm);
+        margin-left: 0;
         font-size: 0.875rem;
     }
 }

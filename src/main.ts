@@ -1,7 +1,28 @@
+import { registerSW } from 'virtual:pwa-register';
+
+// Registrar PWA
+registerSW({
+  onNeedRefresh() {},
+  onOfflineReady() {
+    console.log('App ready to work offline');
+  },
+});
+
+window.addEventListener('online', () => {
+    document.getElementById('offline-indicator')?.classList.add('hidden');
+});
+window.addEventListener('offline', () => {
+    document.getElementById('offline-indicator')?.classList.remove('hidden');
+});
+if (!navigator.onLine) {
+    document.getElementById('offline-indicator')?.classList.remove('hidden');
+}
+
 import './styles/variables.css';
 import './styles/base.css';
 import './styles/layout.css';
 import './styles/components.css';
+import './styles/compare.css';
 import './styles/responsive.css';
 
 import { setupMethodForm } from './ui/methodForm';
@@ -19,7 +40,7 @@ import {
 import { MathError } from './math/errors';
 import { formatComplex } from './math/complex';
 import { renderBracketGraph, renderFixedPointGraph, renderNewtonGraph, renderSecantGraph, renderMullerGraph, clearGraph } from './graph';
-import { generateOctaveCode } from './octave';
+import { generateOctaveCode, OctaveGenerationRequest } from './octave';
 
 const getStopReasonText = (reason: string) => {
     switch (reason) {
@@ -250,6 +271,32 @@ const renderResults = (input: MethodInput, result: MethodResult, methodName: str
             const isBisection = methodName === 'bisection';
             const pointLabel = isBisection ? 'm' : 'w';
             const brResult = result as (BisectionResult | FalsePositionResult);
+
+            // GUARDAR HISTORIAL SI EL RESULTADO ES VÁLIDO Y TIENE SENTIDO ACADÉMICO
+            if (result.converged || result.stopReason === 'MAX_ITERATIONS') {
+                import('./storage').then(({ saveHistoryEntry }) => {
+                    const entry = {
+                        id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2),
+                        createdAt: new Date().toISOString(),
+                        method: methodName as any,
+                        input: input as any,
+                        result: result as any
+                    };
+                    saveHistoryEntry(entry as any).catch(err => {
+                        console.warn("No se pudo guardar en el historial:", err);
+                        // Mostrar advertencia no fatal al usuario
+                        const statusPanel = document.getElementById('global-status-panel');
+                        if (statusPanel) {
+                            const p = document.createElement('p');
+                            p.style.color = 'var(--warning-color)';
+                            p.style.fontSize = '0.85rem';
+                            p.style.marginTop = '0.5rem';
+                            p.innerText = "El ejercicio se resolvió correctamente, pero no fue posible guardarlo en el historial.";
+                            statusPanel.appendChild(p);
+                        }
+                    });
+                });
+            }
             
             let rows = brResult.iterations.map((it: any) => {
                 const pointVal = 'midpoint' in it ? it.midpoint : ('w' in it ? it.w : 0);
@@ -297,8 +344,17 @@ const renderResults = (input: MethodInput, result: MethodResult, methodName: str
     // Renderizar Octave
     const codeContainer = document.getElementById('tab-code');
     if (codeContainer) {
-        const code = generateOctaveCode(methodName, input, result);
-        codeContainer.innerHTML = `
+        let octaveRequest: OctaveGenerationRequest | null = null;
+        if (methodName === 'bisection') octaveRequest = { method: 'bisection', input: input as BisectionInput, result: result as BisectionResult };
+        else if (methodName === 'false-position') octaveRequest = { method: 'false-position', input: input as FalsePositionInput, result: result as FalsePositionResult };
+        else if (methodName === 'fixed-point') octaveRequest = { method: 'fixed-point', input: input as FixedPointInput, result: result as FixedPointResult };
+        else if (methodName === 'newton-raphson') octaveRequest = { method: 'newton-raphson', input: input as NewtonRaphsonInput, result: result as NewtonRaphsonResult };
+        else if (methodName === 'secant') octaveRequest = { method: 'secant', input: input as SecantInput, result: result as SecantResult };
+        else if (methodName === 'muller') octaveRequest = { method: 'muller', input: input as MullerInput, result: result as MullerResult };
+
+        if (octaveRequest) {
+            const code = generateOctaveCode(octaveRequest);
+            codeContainer.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <h3 style="margin: 0;">Código GNU Octave</h3>
                 <button id="copy-octave-btn" class="btn btn-secondary">Copiar código</button>
@@ -323,6 +379,7 @@ const renderResults = (input: MethodInput, result: MethodResult, methodName: str
                     copyBtn.innerText = "Error";
                 }
             });
+        }
         }
     }
 };
@@ -531,4 +588,18 @@ document.addEventListener('DOMContentLoaded', () => {
         onResolve,
         onClear
     );
+
+    // Inicializar Navegación Historial
+    import('./ui/history').then(({ setupHistoryNavigation }) => {
+        setupHistoryNavigation((input, result, method) => {
+            renderResults(input, result, method);
+        });
+    });
+
+    // Inicializar Navegación Comparar
+    import('./ui/compare').then(({ setupCompareNavigation }) => {
+        setupCompareNavigation((input, result, method) => {
+            renderResults(input, result, method);
+        });
+    });
 });

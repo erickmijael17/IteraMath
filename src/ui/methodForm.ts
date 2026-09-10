@@ -100,6 +100,7 @@ export function setupMethodForm(
     selector.addEventListener('change', (e) => {
         const target = e.target as HTMLSelectElement;
         renderDynamicFields(target.value as NumericalMethod);
+        onClear(); // Clear results when method changes
     });
 
     // Handle submit

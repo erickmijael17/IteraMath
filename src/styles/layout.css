@@ -44,6 +44,7 @@
 
 .panel-right {
     flex: 1;
+    min-width: 0;
     padding: var(--spacing-xl);
     overflow-y: auto;
 }
