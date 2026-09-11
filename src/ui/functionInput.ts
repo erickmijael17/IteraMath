@@ -36,9 +36,9 @@ function readParam(name: string): HTMLInputElement | null {
     return document.querySelector(`#resolver-form [name="${name}"]`) as HTMLInputElement | null;
 }
 
-function setParamValue(name: string, value: number): void {
+function setParamValue(name: string, value: number, formatMode: 'decimal' | 'integer' = 'decimal'): void {
     const field = readParam(name);
-    if (field) field.value = formatValue(value);
+    if (field) field.value = formatMode === 'integer' ? Math.round(value).toString() : formatValue(value);
 }
 
 function getTypedPoints(): number[] {
@@ -184,7 +184,64 @@ function renderGxVariations(
     container.appendChild(list);
 }
 
-function buildRecommendation(method: NumericalMethod, candidate: RootCandidate): RecommendationAction {
+let currentPointFormat: 'decimal' | 'integer' = 'decimal';
+
+function buildRecommendation(
+    method: NumericalMethod,
+    candidate: RootCandidate,
+    formatMode: 'decimal' | 'integer' = 'decimal'
+): RecommendationAction {
+    if (formatMode === 'integer') {
+        let intA = Math.floor(candidate.a);
+        let intB = Math.ceil(candidate.b);
+        if (intA === intB) {
+            intB = intA + 1;
+        }
+        let intRoot = Math.round(candidate.rootApprox);
+
+        switch (method) {
+            case 'bisection':
+            case 'false-position':
+                return {
+                    label: `Intervalo [${intA}, ${intB}]`,
+                    apply: () => {
+                        setParamValue('a', intA, 'integer');
+                        setParamValue('b', intB, 'integer');
+                    }
+                };
+            case 'newton-raphson':
+            case 'fixed-point':
+                return {
+                    label: `x0 ≈ ${intRoot}`,
+                    apply: () => setParamValue('x0', intRoot, 'integer')
+                };
+            case 'secant':
+                return {
+                    label: `x0 = ${intA}, x1 = ${intB}`,
+                    apply: () => {
+                        setParamValue('x0', intA, 'integer');
+                        setParamValue('x1', intB, 'integer');
+                    }
+                };
+            case 'muller': {
+                if (intRoot <= intA) {
+                    intRoot = intA + 1;
+                }
+                if (intB <= intRoot) {
+                    intB = intRoot + 1;
+                }
+                return {
+                    label: `x0 = ${intA}, x1 = ${intRoot}, x2 = ${intB}`,
+                    apply: () => {
+                        setParamValue('x0', intA, 'integer');
+                        setParamValue('x1', intRoot, 'integer');
+                        setParamValue('x2', intB, 'integer');
+                    }
+                };
+            }
+        }
+    }
+
     const a = formatValue(candidate.a);
     const b = formatValue(candidate.b);
     const root = formatValue(candidate.rootApprox);
@@ -195,31 +252,31 @@ function buildRecommendation(method: NumericalMethod, candidate: RootCandidate):
             return {
                 label: `Intervalo [${a}, ${b}]`,
                 apply: () => {
-                    setParamValue('a', candidate.a);
-                    setParamValue('b', candidate.b);
+                    setParamValue('a', candidate.a, 'decimal');
+                    setParamValue('b', candidate.b, 'decimal');
                 }
             };
         case 'newton-raphson':
         case 'fixed-point':
             return {
                 label: `x0 ≈ ${root}`,
-                apply: () => setParamValue('x0', candidate.rootApprox)
+                apply: () => setParamValue('x0', candidate.rootApprox, 'decimal')
             };
         case 'secant':
             return {
                 label: `x0 = ${a}, x1 = ${b}`,
                 apply: () => {
-                    setParamValue('x0', candidate.a);
-                    setParamValue('x1', candidate.b);
+                    setParamValue('x0', candidate.a, 'decimal');
+                    setParamValue('x1', candidate.b, 'decimal');
                 }
             };
         case 'muller':
             return {
                 label: `x0 = ${a}, x1 = ${root}, x2 = ${b}`,
                 apply: () => {
-                    setParamValue('x0', candidate.a);
-                    setParamValue('x1', candidate.rootApprox);
-                    setParamValue('x2', candidate.b);
+                    setParamValue('x0', candidate.a, 'decimal');
+                    setParamValue('x1', candidate.rootApprox, 'decimal');
+                    setParamValue('x2', candidate.b, 'decimal');
                 }
             };
     }
@@ -266,6 +323,10 @@ function renderRecommendations(
     const header = document.createElement('div');
     header.className = 'recommendations-header';
 
+    const headerRow = document.createElement('div');
+    headerRow.className = 'recommendations-header-row';
+
+    const titleBlock = document.createElement('div');
     const label = document.createElement('p');
     label.className = 'recommendations-label';
     label.textContent = 'Puntos sugeridos por cambio de signo';
@@ -273,15 +334,50 @@ function renderRecommendations(
     const hint = document.createElement('small');
     hint.className = 'recommendations-hint';
     hint.textContent = 'Haz clic para autocompletar. Si tu ejercicio ya tiene puntos asignados en el enunciado, ignora la sugerencia y escribe los tuyos.';
+    titleBlock.appendChild(label);
+    titleBlock.appendChild(hint);
 
-    header.appendChild(label);
-    header.appendChild(hint);
+    const toggleGroup = document.createElement('div');
+    toggleGroup.className = 'point-format-toggle';
+    toggleGroup.setAttribute('role', 'group');
+    toggleGroup.setAttribute('aria-label', 'Formato de puntos sugeridos');
+
+    const btnDec = document.createElement('button');
+    btnDec.type = 'button';
+    btnDec.className = `btn-point-format ${currentPointFormat === 'decimal' ? 'active' : ''}`;
+    btnDec.textContent = 'Decimal';
+    btnDec.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (currentPointFormat !== 'decimal') {
+            currentPointFormat = 'decimal';
+            renderRecommendations(method, candidates, onApply, options);
+        }
+    });
+
+    const btnInt = document.createElement('button');
+    btnInt.type = 'button';
+    btnInt.className = `btn-point-format ${currentPointFormat === 'integer' ? 'active' : ''}`;
+    btnInt.textContent = 'Enteros';
+    btnInt.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (currentPointFormat !== 'integer') {
+            currentPointFormat = 'integer';
+            renderRecommendations(method, candidates, onApply, options);
+        }
+    });
+
+    toggleGroup.appendChild(btnDec);
+    toggleGroup.appendChild(btnInt);
+
+    headerRow.appendChild(titleBlock);
+    headerRow.appendChild(toggleGroup);
+    header.appendChild(headerRow);
 
     const chips = document.createElement('div');
     chips.className = 'recommendations-chips';
 
     candidates.forEach(candidate => {
-        const recommendation = buildRecommendation(method, candidate);
+        const recommendation = buildRecommendation(method, candidate, currentPointFormat);
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'chip chip-recommendation';
