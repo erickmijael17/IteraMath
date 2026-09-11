@@ -99,6 +99,7 @@ export interface FixedPointIteration {
     fNext: number;
     error: number | null;
     residual: number | null;
+    gPrime: number | null;
 }
 
 export interface FixedPointResult {
@@ -109,6 +110,8 @@ export interface FixedPointResult {
     converged: boolean;
     stopReason: StopReason;
     totalIterations: number;
+    gPrimeExpression: string | null;
+    gPrimeAtRoot: number | null;
 }
 
 export interface NewtonRaphsonInput {

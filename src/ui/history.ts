@@ -13,7 +13,6 @@ export function setupHistoryNavigation(renderResultsCallback: (input: any, resul
     const navCompare = document.getElementById('nav-compare');
     const viewCompare = document.getElementById('view-compare');
 
-    // Navigation logic
     navResolver?.addEventListener('click', (e) => {
         e.preventDefault();
         navResolver.classList.add('active');
@@ -38,7 +37,6 @@ export function setupHistoryNavigation(renderResultsCallback: (input: any, resul
         await loadHistory();
     });
 
-    // Clear History Button
     btnClearHistory?.addEventListener('click', () => {
         showConfirmModal('¿Limpiar todo el historial?', 'Esta acción no se puede deshacer.', async () => {
             await clearHistory();
@@ -46,7 +44,6 @@ export function setupHistoryNavigation(renderResultsCallback: (input: any, resul
         });
     });
 
-    // Format Methods Names
     const methodNames: Record<string, string> = {
         'bisection': 'Bisección',
         'false-position': 'Regla Falsa',
@@ -56,7 +53,6 @@ export function setupHistoryNavigation(renderResultsCallback: (input: any, resul
         'muller': 'Müller'
     };
 
-    // Render History
     async function loadHistory() {
         if (!historyList) return;
         
@@ -83,8 +79,8 @@ export function setupHistoryNavigation(renderResultsCallback: (input: any, resul
                 card.style.border = '1px solid var(--border-color)';
                 card.style.borderRadius = 'var(--radius-md)';
                 card.style.padding = '1.5rem';
-                card.style.backgroundColor = 'var(--surface-color)';
-                card.style.boxShadow = 'var(--shadow-sm)';
+                card.style.backgroundColor = 'var(--surface)';
+                card.style.boxShadow = 'var(--shadow-island)';
                 
                 const rootFormat = typeof entry.result.root === 'number' 
                     ? entry.result.root.toFixed(8) 
@@ -94,11 +90,11 @@ export function setupHistoryNavigation(renderResultsCallback: (input: any, resul
                 
                 card.innerHTML = `
                     <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
-                        <div style="font-weight: 600; color: var(--primary-color);">${methodNames[entry.method]}</div>
+                        <div style="font-weight: 600; color: var(--color-primary);">${methodNames[entry.method]}</div>
                         <div style="color: var(--text-muted); font-size: 0.85rem;">${date}</div>
                     </div>
                     <div style="margin-bottom: 1rem;">
-                        <code style="font-size: 1.1rem; color: var(--text-color);">f(x) = ${entry.input.expression}</code>
+                        <code style="font-size: 1.1rem; color: var(--text-primary);">f(x) = ${entry.input.expression}</code>
                     </div>
                     <div style="margin-bottom: 1rem; display: flex; gap: 2rem;">
                         <div>
@@ -123,14 +119,12 @@ export function setupHistoryNavigation(renderResultsCallback: (input: any, resul
                 historyList.appendChild(card);
             });
 
-            // Bind events for cards
             document.querySelectorAll('.btn-view').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     const id = (e.target as HTMLButtonElement).getAttribute('data-id')!;
                     const entry = entries.find(x => x.id === id);
                     if (entry) {
                         navResolver?.click();
-                        // Reutiliza componentes
                         renderResultsCallback(entry.input, entry.result, entry.method);
                     }
                 });
@@ -143,14 +137,12 @@ export function setupHistoryNavigation(renderResultsCallback: (input: any, resul
                     if (entry) {
                         navResolver?.click();
                         
-                        // Cargar en formulario
                         const methodSelector = document.getElementById('method-selector') as HTMLSelectElement;
                         if (methodSelector) {
                             methodSelector.value = entry.method;
                             methodSelector.dispatchEvent(new Event('change'));
                         }
                         
-                        // Esperar un ciclo a que se generen los campos dinámicos
                         setTimeout(() => {
                             const map: any = {
                                 'fx': entry.input.expression,
@@ -193,7 +185,7 @@ export function setupHistoryNavigation(renderResultsCallback: (input: any, resul
 }
 
 function showConfirmModal(title: string, message: string, onConfirm: () => void) {
-    const modal = document.getElementById('confirm-modal');
+    const modal = document.getElementById('confirm-modal') as HTMLDialogElement | null;
     const titleEl = document.getElementById('modal-title');
     const messageEl = document.getElementById('modal-message');
     const btnCancel = document.getElementById('modal-btn-cancel');
@@ -203,10 +195,18 @@ function showConfirmModal(title: string, message: string, onConfirm: () => void)
         titleEl.textContent = title;
         messageEl.textContent = message;
         
-        modal.classList.remove('hidden');
+        if (typeof modal.showModal === 'function') {
+            modal.showModal();
+        } else {
+            modal.classList.remove('hidden');
+        }
         
         const cleanup = () => {
-            modal.classList.add('hidden');
+            if (typeof modal.close === 'function') {
+                modal.close();
+            } else {
+                modal.classList.add('hidden');
+            }
             btnCancel.removeEventListener('click', onCancelHandler);
             btnConfirm.removeEventListener('click', onConfirmHandler);
         };

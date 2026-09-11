@@ -54,7 +54,7 @@ export function setupCompareNavigation(renderResultsCallback: (input: any, resul
         const selectedMethods = fd.getAll('selectedMethods') as string[];
         
         if (selectedMethods.length < 2) {
-            alert('Por favor, selecciona al menos 2 métodos para comparar.');
+            showCompareNotification('Por favor, selecciona al menos 2 métodos para comparar.', true);
             return;
         }
 
@@ -91,7 +91,7 @@ export function setupCompareNavigation(renderResultsCallback: (input: any, resul
             lastComparisonResults = { request: req, results: comparison.results };
             renderCompareResults(comparison.results, comparison.metrics, req, renderResultsCallback);
         } catch (e: any) {
-            alert(`Error general en la comparación: ${e.message}`);
+            showCompareNotification(`Error general en la comparación: ${e.message}`, true);
         }
     });
 
@@ -118,8 +118,26 @@ export function setupCompareNavigation(renderResultsCallback: (input: any, resul
                 savedCount++;
             }
         }
-        alert(`Se han guardado ${savedCount} resultados válidos en el historial local.`);
+        showCompareNotification(`Se han guardado ${savedCount} resultados válidos en el historial local.`, false);
     });
+}
+
+function showCompareNotification(message: string, isError: boolean) {
+    let notif = document.getElementById('compare-notification');
+    if (!notif) {
+        notif = document.createElement('div');
+        notif.id = 'compare-notification';
+        notif.setAttribute('role', 'status');
+        notif.setAttribute('aria-live', 'polite');
+        const container = document.querySelector('.compare-actions') || document.getElementById('compare-form');
+        container?.prepend(notif);
+    }
+    notif.className = `badge ${isError ? 'badge-error' : 'badge-success'}`;
+    notif.textContent = message;
+    notif.classList.remove('hidden');
+    setTimeout(() => {
+        notif?.classList.add('hidden');
+    }, 4000);
 }
 
 function renderMethodCheckboxes() {
@@ -180,7 +198,6 @@ function renderMethodCheckboxes() {
             } else {
                 paramsContainer.classList.remove('active');
             }
-            // Required toggle
             paramsContainer.querySelectorAll('input').forEach(inp => {
                 inp.required = isChecked;
             });
@@ -192,7 +209,6 @@ function renderMethodCheckboxes() {
 }
 
 function loadExample() {
-    // Ejemplo: f(x) = x^3 - x - 1
     const form = document.getElementById('compare-form') as HTMLFormElement;
     if (!form) return;
     
@@ -204,7 +220,7 @@ function loadExample() {
     const checkAndFill = (method: string, values: Record<string, string>) => {
         const chk = document.getElementById(`chk_${method}`) as HTMLInputElement;
         if (chk) {
-            if (!chk.checked) chk.click(); // Dispara eventos
+            if (!chk.checked) chk.click();
             for (const [k, v] of Object.entries(values)) {
                 const inp = form.elements.namedItem(`${method}_${k}`) as HTMLInputElement;
                 if (inp) inp.value = v;
@@ -212,7 +228,6 @@ function loadExample() {
         }
     };
 
-    // Desmarcar todos primero
     document.querySelectorAll('input[name="selectedMethods"]').forEach((chk: any) => {
         if (chk.checked) chk.click();
     });
@@ -228,7 +243,6 @@ function formatRoot(root: number | ComplexValue | undefined): string {
     if (root === undefined) return '-';
     if (typeof root === 'number') return root.toFixed(8);
     
-    // Es complejo
     if (Math.abs(root.im) < 1e-12) return root.re.toFixed(8);
     const sign = root.im >= 0 ? '+' : '-';
     return `${root.re.toFixed(8)} ${sign} ${Math.abs(root.im).toFixed(8)}i`;
@@ -248,7 +262,6 @@ function renderCompareResults(
     
     container.classList.remove('hidden');
     
-    // Tabla
     tbody.innerHTML = '';
     results.forEach(res => {
         const tr = document.createElement('tr');
@@ -284,7 +297,6 @@ function renderCompareResults(
             btn.style.fontSize = '0.85rem';
             btn.textContent = 'Ver detalle';
             btn.onclick = () => {
-                // Navegar a resolver y reutilizar
                 document.getElementById('nav-resolver')?.click();
                 const specInput = (req.methods as any)[res.method];
                 const fullInput = { ...req.common, ...specInput };
@@ -312,7 +324,6 @@ function renderCompareResults(
         tbody.appendChild(tr);
     });
 
-    // Métricas
     metricsContainer.innerHTML = '';
     const addMetric = (title: string, methodKey: NumericalMethod | null, desc: string) => {
         const div = document.createElement('div');
@@ -340,6 +351,5 @@ function renderCompareResults(
     addMetric('Menor error final', metrics.lowestErrorMethod, 'Aproximación más cercana según criterio');
     addMetric('Menor residuo', metrics.lowestResidualMethod, 'Evaluación |f(x)| más cercana a 0');
 
-    // Graficar
     plotConvergence('compare-plotly-canvas', results, req.common.errorCriterion);
 }

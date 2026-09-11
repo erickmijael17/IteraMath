@@ -1,9 +1,10 @@
 import { FixedPointInput, FixedPointResult, FixedPointIteration } from '../types/numerical';
-import { 
-    createExpression, 
-    validateTolerance, 
-    validateMaxIterations, 
-    validateFinite, 
+import {
+    createExpression,
+    createDerivative,
+    validateTolerance,
+    validateMaxIterations,
+    validateFinite,
     MathError,
     calculateApproximationError,
     calculateResidual,
@@ -18,6 +19,31 @@ export function fixedPoint(input: FixedPointInput): FixedPointResult {
     const fEvaluator = createExpression(input.expression);
     const gEvaluator = createExpression(input.iterationExpression);
 
+    let gDerivative: ReturnType<typeof createDerivative> | null = null;
+    try {
+        gDerivative = createDerivative(input.iterationExpression);
+    } catch {
+        gDerivative = null;
+    }
+
+    const evaluateGPrime = (x: number): number | null => {
+        if (!gDerivative) return null;
+        try {
+            const value = gDerivative.evaluator.evaluate(x);
+            return Number.isFinite(value) ? value : null;
+        } catch {
+            return null;
+        }
+    };
+
+    const buildResult = (
+        base: Omit<FixedPointResult, 'gPrimeExpression' | 'gPrimeAtRoot'>
+    ): FixedPointResult => ({
+        ...base,
+        gPrimeExpression: gDerivative ? gDerivative.expressionString : null,
+        gPrimeAtRoot: evaluateGPrime(base.root)
+    });
+
     let currentX = input.x0;
     const iterations: FixedPointIteration[] = [];
 
@@ -26,7 +52,7 @@ export function fixedPoint(input: FixedPointInput): FixedPointResult {
     validateFinite(fCurrent, 'f(x0)');
 
     if (fCurrent === 0) {
-        return {
+        return buildResult({
             root: currentX,
             iterations: [],
             finalError: null,
@@ -34,7 +60,7 @@ export function fixedPoint(input: FixedPointInput): FixedPointResult {
             converged: true,
             stopReason: 'EXACT_ROOT',
             totalIterations: 0
-        };
+        });
     }
 
     for (let k = 0; k < input.maxIterations; k++) {
@@ -71,11 +97,12 @@ export function fixedPoint(input: FixedPointInput): FixedPointResult {
             xNext: nextX,
             fNext: fNext,
             error: error,
-            residual: residual
+            residual: residual,
+            gPrime: evaluateGPrime(currentX)
         });
 
         if (fNext === 0) {
-            return {
+            return buildResult({
                 root: nextX,
                 iterations,
                 finalError: error,
@@ -83,11 +110,11 @@ export function fixedPoint(input: FixedPointInput): FixedPointResult {
                 converged: true,
                 stopReason: 'EXACT_ROOT',
                 totalIterations: k + 1
-            };
+            });
         }
 
         if (error !== null && hasReachedTolerance(error, input.tolerance)) {
-            return {
+            return buildResult({
                 root: nextX,
                 iterations,
                 finalError: error,
@@ -95,7 +122,7 @@ export function fixedPoint(input: FixedPointInput): FixedPointResult {
                 converged: true,
                 stopReason: 'TOLERANCE_REACHED',
                 totalIterations: k + 1
-            };
+            });
         }
 
         currentX = nextX;
@@ -103,7 +130,7 @@ export function fixedPoint(input: FixedPointInput): FixedPointResult {
 
     const finalResidual = Math.abs(fEvaluator.evaluate(currentX));
 
-    return {
+    return buildResult({
         root: currentX,
         iterations,
         finalError: iterations.length > 0 ? iterations[iterations.length - 1].error : null,
@@ -111,5 +138,5 @@ export function fixedPoint(input: FixedPointInput): FixedPointResult {
         converged: false,
         stopReason: 'MAX_ITERATIONS',
         totalIterations: input.maxIterations
-    };
+    });
 }

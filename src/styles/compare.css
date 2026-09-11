@@ -1,55 +1,77 @@
 .compare-view {
-    padding: 2rem;
+    padding: var(--spacing-lg);
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: var(--spacing-lg);
 }
 
 .compare-view-title {
-    margin-bottom: 1.5rem;
+    margin-bottom: var(--spacing-md);
+    letter-spacing: -0.02em;
 }
 
 .compare-form {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: var(--spacing-lg);
 }
 
 .compare-section {
-    background: var(--surface);
-    padding: 1.5rem;
+    background: var(--glass-surface);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    padding: var(--spacing-xl);
     border-radius: var(--radius-lg);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-island);
 }
 
 .compare-section-title {
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
     color: var(--color-primary);
+    font-size: 1.125rem;
+    letter-spacing: -0.01em;
 }
 
 .compare-section-desc {
     color: var(--text-secondary);
-    margin-bottom: 1rem;
-    font-size: 0.9rem;
+    margin-bottom: var(--spacing-md);
+    font-size: 0.875rem;
 }
 
 .compare-methods-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: var(--spacing-md);
 }
 
 .compare-method-card {
     border: 1px solid var(--border-color);
-    padding: 1rem;
-    border-radius: var(--radius-sm);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
     background: var(--surface);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.compare-method-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.08);
 }
 
 .compare-method-header {
-    margin-bottom: 1rem;
+    margin-bottom: var(--spacing-sm);
     display: flex;
     align-items: center;
+    min-height: 44px;
+}
+
+.compare-method-header label {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    min-height: 44px;
+    width: 100%;
 }
 
 .compare-method-label {
@@ -61,6 +83,8 @@
     display: none;
     flex-direction: column;
     gap: 0.75rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border-color);
 }
 
 .compare-method-params.active {
@@ -74,34 +98,41 @@
 }
 
 .compare-results-container {
-    margin-top: 3rem;
+    margin-top: 2rem;
     min-width: 0;
 }
 
 .compare-metrics-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    margin-bottom: 2rem;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-xl);
 }
 
 .compare-metric-card {
-    background: var(--surface);
+    background: var(--glass-surface);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
     padding: 1.25rem;
     border-radius: var(--radius-md);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-island);
 }
 
 .compare-metric-title {
     color: var(--text-secondary);
-    font-size: 0.85rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
     margin-bottom: 0.5rem;
 }
 
 .compare-metric-value {
-    font-size: 1.25rem;
-    font-weight: bold;
+    font-size: 1.5rem;
+    font-weight: 700;
     color: var(--color-primary);
+    font-family: var(--font-mono);
 }
 
 .compare-metric-desc {
@@ -111,22 +142,27 @@
 }
 
 .compare-note {
-    margin-bottom: 2rem;
-    padding: 1rem;
-    background-color: var(--background);
+    margin-bottom: var(--spacing-xl);
+    padding: var(--spacing-lg);
+    background: var(--glass-surface);
     border-left: 4px solid var(--color-primary);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
+    border-top: 1px solid var(--glass-border);
+    border-right: 1px solid var(--glass-border);
+    border-bottom: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-island);
 }
 
 .compare-note-title {
     margin-bottom: 0.5rem;
     font-size: 0.95rem;
+    font-weight: 600;
 }
 
 .compare-note-text {
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     color: var(--text-secondary);
-    line-height: 1.4;
+    line-height: 1.5;
 }
 
 .compare-actions {
@@ -135,7 +171,6 @@
     margin-bottom: 4rem;
 }
 
-/* Fixes for mobile layout */
 @media (max-width: 768px) {
     .compare-view {
         padding: 1rem;

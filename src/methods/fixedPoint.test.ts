@@ -146,7 +146,7 @@ describe('Fixed Point Method', () => {
 
     it('Case 11: throws NON_FINITE_RESULT if g(x) produces NaN/Infinity', () => {
         try {
-            // Un f(x) falso para evitar exact root. 
+            // Un f(x) falso para evitar exact root.
             // g(x) = 1/x -> x0 = 0
             fixedPoint({
                 expression: 'x - 5',
@@ -160,5 +160,41 @@ describe('Fixed Point Method', () => {
         } catch (e: any) {
             expect(e.code).toBe('NON_FINITE_RESULT');
         }
+    });
+
+    it('Case 12: reporta g\'(x) y el criterio de convergencia en la raíz', () => {
+        const result = fixedPoint({
+            expression: 'cos(x) - x',
+            iterationExpression: 'cos(x)',
+            x0: 0.5,
+            tolerance: 1e-10,
+            maxIterations: 100,
+            errorCriterion: 'absolute'
+        });
+
+        expect(result.gPrimeExpression).toBe('-sin(x)');
+        expect(result.gPrimeAtRoot).not.toBeNull();
+        expect(Math.abs(result.gPrimeAtRoot!)).toBeCloseTo(Math.sin(0.7391), 3);
+        result.iterations.forEach(it => {
+            expect(it.gPrime).not.toBeNull();
+            expect(Math.abs(it.gPrime!)).toBeLessThan(1);
+        });
+    });
+
+    it('Case 13: detecta |g\'(r)| >= 1 en el caso divergente', () => {
+        const result = fixedPoint({
+            expression: '2*x - 1',
+            iterationExpression: '2*x',
+            x0: 1,
+            tolerance: 1e-6,
+            maxIterations: 5,
+            errorCriterion: 'absolute'
+        });
+
+        expect(result.gPrimeExpression).toBe('2');
+        expect(Math.abs(result.gPrimeAtRoot!)).toBe(2);
+        result.iterations.forEach(it => {
+            expect(it.gPrime).toBe(2);
+        });
     });
 });

@@ -5,14 +5,6 @@ export interface SampledFunction {
     y: (number | null)[];
 }
 
-/**
- * Genera puntos de una función para visualización.
- * @param expression Función a evaluar.
- * @param a Límite inferior de interés.
- * @param b Límite superior de interés.
- * @param samples Número de muestras (por defecto 200 para balance entre calidad y rendimiento).
- * @returns Coordenadas x e y. Puntos fuera de dominio retornan y = null.
- */
 export function sampleFunction(
     expression: string, 
     a: number, 
@@ -29,7 +21,6 @@ export function sampleFunction(
         xMin = a - interval * 0.25;
         xMax = b + interval * 0.25;
     } else {
-        // Fallback por si acaso a y b son iguales o están invertidos (no debería pasar por validación previa)
         xMin = Math.min(a, b) - 1;
         xMax = Math.max(a, b) + 1;
     }
@@ -45,14 +36,12 @@ export function sampleFunction(
         
         try {
             const currentY = evaluator.evaluate(currentX);
-            // Comprobación extra por si acaso
             if (isNaN(currentY) || !isFinite(currentY)) {
                 yValues.push(null);
             } else {
                 yValues.push(currentY);
             }
         } catch (error) {
-            // Fuera de dominio, división por cero, etc.
             yValues.push(null);
         }
     }

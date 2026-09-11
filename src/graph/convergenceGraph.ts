@@ -1,21 +1,16 @@
+import Plotly from 'plotly.js-dist-min';
 import { ErrorCriterion } from '../types/numerical';
 import { CompareMethodResult } from '../comparison/types';
+import { getGraphColors, buildGraphLayout, plotGraph } from './graphTheme';
 
-// Ocultar tipo exacto de plotly
-declare const Plotly: any;
-
-export function plotConvergence(containerId: string, results: CompareMethodResult[], criterion: ErrorCriterion) {
+export function plotConvergence(
+    containerId: string,
+    results: CompareMethodResult[],
+    criterion: ErrorCriterion
+) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    if (typeof Plotly === 'undefined') {
-        container.innerHTML = '<div class="empty-state">Plotly.js no está cargado.</div>';
-        return;
-    }
-
-    const data: any[] = [];
-    
-    // Nombres para mostrar
     const methodNames: Record<string, string> = {
         'bisection': 'Bisección',
         'false-position': 'Regla Falsa',
@@ -25,40 +20,45 @@ export function plotConvergence(containerId: string, results: CompareMethodResul
         'muller': 'Müller'
     };
 
+    const colors = getGraphColors();
+    const data: Plotly.Data[] = [];
+    let seriesIndex = 0;
+
     results.forEach(res => {
-        if (res.status === 'success' && res.result) {
-            const iterations = res.result.iterations;
-            if (iterations.length === 0) return;
+        if (res.status !== 'success' || !res.result) return;
 
-            const x: number[] = [];
-            const y: number[] = [];
+        const iterations = res.result.iterations;
+        if (iterations.length === 0) return;
 
-            iterations.forEach((it: any) => {
-                let val: number | null = null;
-                
-                if (criterion === 'residual') {
-                    val = Math.abs(it.residual ?? 0);
-                } else {
-                    val = it.error;
-                }
+        const x: number[] = [];
+        const y: number[] = [];
 
-                if (val !== null && val !== undefined && !isNaN(val)) {
-                    x.push(it.iteration);
-                    y.push(val);
-                }
-            });
+        iterations.forEach((it: any) => {
+            const val = criterion === 'residual' ? Math.abs(it.residual ?? 0) : it.error;
 
-            if (x.length > 0) {
-                data.push({
-                    x,
-                    y,
-                    type: 'scatter',
-                    mode: 'lines+markers',
-                    name: methodNames[res.method] || res.method,
-                    line: { shape: 'linear' }
-                });
+            if (val !== null && val !== undefined && !isNaN(val)) {
+                x.push(it.iteration);
+                y.push(val);
             }
-        }
+        });
+
+        if (x.length === 0) return;
+
+        data.push({
+            x,
+            y,
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: methodNames[res.method] || res.method,
+            line: { color: colors.series[seriesIndex % colors.series.length], width: 2 },
+            marker: {
+                color: colors.series[seriesIndex % colors.series.length],
+                size: 8,
+                line: { width: 2, color: colors.surface }
+            },
+            hovertemplate: 'k: %{x}<br>valor: %{y:.4e}<extra></extra>'
+        });
+        seriesIndex++;
     });
 
     if (data.length === 0) {
@@ -68,23 +68,12 @@ export function plotConvergence(containerId: string, results: CompareMethodResul
 
     const titleY = criterion === 'residual' ? 'Magnitud del Residuo |f(x)|' : 'Error';
 
-    const layout = {
+    const layout = buildGraphLayout({
         title: 'Gráfica de Convergencia',
-        xaxis: {
-            title: 'Iteración (k)',
-            tick0: 0,
-            dtick: 1
-        },
-        yaxis: {
-            title: titleY,
-            type: 'log', // Escala logarítmica sugerida
-            exponentformat: 'e'
-        },
-        margin: { l: 60, r: 20, t: 40, b: 40 },
-        legend: { orientation: 'h', y: -0.2 }
-    };
+        xAxisTitle: 'Iteración (k)',
+        yAxisTitle: titleY,
+        yLogScale: true
+    });
 
-    const config = { responsive: true, displayModeBar: false };
-
-    Plotly.newPlot(containerId, data, layout, config);
+    plotGraph(container, data, layout);
 }

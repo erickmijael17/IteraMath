@@ -22,6 +22,13 @@ describe('Octave Code Generator', () => {
         expect(formatOctaveExpression('sin(x) + exp(-x)')).toBe('sin(x)+exp(-x)');
     });
 
+    it('normaliza multiplicación implícita y funciones en español para Octave', () => {
+        expect(formatOctaveExpression('sin(x)*2x')).toBe('sin(x)*2*x');
+        expect(formatOctaveExpression('sen(x) + 3(x-1)')).toBe('sin(x)+3*(x-1)');
+        expect(formatOctaveExpression('X^2)(x+1)')).toBe('x^2)*(x+1)');
+        expect(formatOctaveExpression('raiz(x) + ln(x)')).toBe('sqrt(x)+log(x)');
+    });
+
     it('genera código Bisección correctamente', () => {
         const request: OctaveGenerationRequest = {
             method: 'bisection',

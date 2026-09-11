@@ -1,4 +1,5 @@
 import { ComplexValue } from '../math/complex';
+import { normalizeExpression } from '../math/expressionCorrection';
 
 /**
  * Formatea un número real a su representación en string para GNU Octave.
@@ -37,7 +38,5 @@ export function formatOctaveComplex(val: ComplexValue): string {
  * Quita espacios innecesarios y valida operaciones básicas.
  */
 export function formatOctaveExpression(expr: string): string {
-    // Por ahora, las expresiones de mathjs utilizadas en IteraMath 
-    // son ampliamente compatibles con Octave (sin, cos, exp, sqrt, ^).
-    return expr.replace(/\s+/g, '');
+    return normalizeExpression(expr).replace(/\s+/g, '');
 }

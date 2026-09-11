@@ -1,10 +1,8 @@
 :root {
-    /* Brand Colors */
     --color-primary: #4F46E5;
     --color-primary-hover: #4338CA;
-    --color-secondary: #E0E7FF;
+    --color-secondary: #EEF2FF;
     
-    /* Semantic Colors */
     --color-success: #10B981;
     --color-success-bg: #D1FAE5;
     --color-success-text: #065F46;
@@ -12,38 +10,90 @@
     --color-error: #EF4444;
     --color-error-bg: #FEE2E2;
     --color-error-text: #991B1B;
+    --danger-color: #EF4444;
 
     --color-warning: #F59E0B;
     --color-warning-bg: #FEF3C7;
     --color-warning-text: #92400E;
+    --warning-color: #F59E0B;
 
     --color-info: #0EA5E9;
     --color-info-bg: #E0F2FE;
     --color-info-text: #075985;
 
-    /* Neutrals */
-    --background: #F9FAFB;
+    --background: #F1F5F9;
     --surface: #FFFFFF;
+    --surface-light: #F8FAFC;
     
-    --text-primary: #111827;
-    --text-secondary: #6B7280;
+    --glass-bg: rgba(255, 255, 255, 0.75);
+    --glass-surface: rgba(255, 255, 255, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.7);
+    --glass-border-subtle: rgba(226, 232, 240, 0.8);
+    --glass-blur: 16px;
     
-    --border-color: #E5E7EB;
+    --shadow-island: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+    --shadow-float: 0 12px 32px -4px rgba(15, 23, 42, 0.08), 0 4px 8px -2px rgba(15, 23, 42, 0.03);
+    --shadow-active: 0 0 0 3px rgba(79, 70, 229, 0.15);
+
+    --text-primary: #0F172A;
+    --text-secondary: #64748B;
+    --text-muted: #94A3B8;
     
-    /* Spacing */
+    --border-color: #E2E8F0;
+    
     --spacing-xs: 4px;
     --spacing-sm: 8px;
     --spacing-md: 16px;
     --spacing-lg: 24px;
     --spacing-xl: 32px;
 
-    /* Radius */
-    --radius-sm: 4px;
-    --radius-md: 6px;
-    --radius-lg: 8px;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 12px;
     --radius-full: 9999px;
 
-    /* Typography */
-    --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
-    --font-mono: 'Fira Code', 'JetBrains Mono', Consolas, monospace;
+    --font-ui: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
+    --font-mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', Menlo, monospace;
+    --font-math: 'STIX Two Math', 'Cambria Math', 'KaTeX_Main', 'Latin Modern Math', Georgia, serif;
+    --glass-card: rgba(255, 255, 255, 0.55);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --color-primary: #6366F1;
+        --color-primary-hover: #4F46E5;
+        --color-secondary: #1E1B4B;
+
+        --background: #090D16;
+        --surface: #131B2E;
+        --surface-light: #1E293B;
+
+        --glass-bg: rgba(19, 27, 46, 0.75);
+        --glass-surface: rgba(30, 41, 59, 0.85);
+        --glass-border: rgba(255, 255, 255, 0.09);
+        --glass-border-subtle: rgba(255, 255, 255, 0.05);
+        --glass-card: rgba(255, 255, 255, 0.04);
+
+        --shadow-island: 0 8px 24px -4px rgba(0, 0, 0, 0.4);
+        --shadow-float: 0 16px 36px -6px rgba(0, 0, 0, 0.5);
+        --shadow-active: 0 0 0 3px rgba(99, 102, 241, 0.25);
+
+        --text-primary: #F8FAFC;
+        --text-secondary: #94A3B8;
+        --text-muted: #64748B;
+
+        --border-color: rgba(255, 255, 255, 0.08);
+
+        --color-success-bg: rgba(16, 185, 129, 0.15);
+        --color-success-text: #6EE7B7;
+
+        --color-error-bg: rgba(239, 68, 68, 0.15);
+        --color-error-text: #FCA5A5;
+
+        --color-warning-bg: rgba(245, 158, 11, 0.15);
+        --color-warning-text: #FCD34D;
+
+        --color-info-bg: rgba(14, 165, 233, 0.15);
+        --color-info-text: #7DD3FC;
+    }
 }
