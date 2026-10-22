@@ -1132,3 +1132,63 @@ dialog::backdrop {
     opacity: 1;
     transform: translateY(0);
 }
+
+.matrix-grid {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: repeat(var(--cols), minmax(72px, 1fr));
+}
+
+.matrix-grid input,
+.point-table input {
+    width: 100%;
+}
+
+.point-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.point-table th,
+.point-table td {
+    padding: 4px;
+    text-align: left;
+}
+
+.example-row,
+.inline-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.example-row .btn-secondary.active {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+}
+
+.method-help {
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.result-block {
+    margin-bottom: 1.25rem;
+}
+
+.result-block table td.marca,
+.result-block table th.marca {
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
+    font-weight: 650;
+}
+
+.table-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 0.5rem;
+}

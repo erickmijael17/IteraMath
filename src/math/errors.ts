@@ -10,7 +10,12 @@ export type MathErrorCode =
     | "ZERO_DERIVATIVE"
     | "ZERO_SECANT_DENOMINATOR"
     | "DEGENERATE_MULLER_POINTS"
-    | "ZERO_MULLER_DENOMINATOR";
+    | "ZERO_MULLER_DENOMINATOR"
+    | "INVALID_MATRIX"
+    | "SINGULAR"
+    | "NOT_SPD"
+    | "INVALID_POINTS"
+    | "SIZE_LIMIT";
 
 export class MathError extends Error {
     public readonly code: MathErrorCode;

@@ -1,4 +1,4 @@
-const DB_NAME = 'iteramath-db';
+const DB_NAME = 'iteramath-u2-db';
 const DB_VERSION = 1;
 
 let dbPromise: Promise<IDBDatabase> | null = null;

@@ -7,9 +7,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg'],
       manifest: {
-        name: 'IteraMath',
-        short_name: 'IteraMath',
-        description: 'Calculadora de métodos numéricos para raíces de funciones',
+        name: 'IteraMath U2',
+        short_name: 'IteraMath U2',
+        description: 'Sistemas, interpolación y ajuste de curvas de la unidad 2',
         theme_color: '#4F46E5', // --color-primary
         background_color: '#F9FAFB', // --background
         display: 'standalone',

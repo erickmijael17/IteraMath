@@ -324,7 +324,7 @@ export function clearGraph(containerId: string) {
     Plotly.purge(container);
     container.innerHTML = `
         <div class="empty-state">
-            <p>Resuelve un ejercicio para visualizar la función.</p>
+            <p>Resuelve un ejercicio para ver la gráfica.</p>
         </div>
     `;
 }

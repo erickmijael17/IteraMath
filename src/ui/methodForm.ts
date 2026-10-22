@@ -1,124 +1,217 @@
-import { NumericalMethod } from '../types/numerical';
+import { MethodId } from '../types/numerical';
+import { EXAMPLES, ExamplePreset, METHOD_HELP } from './examples';
+import { isMethodId } from './methodRegistry';
 
-export function setupMethodForm(
-    formId: string,
-    selectorId: string,
-    dynamicContainerId: string,
-    onResolve: () => void,
-    onClear: () => void
-) {
-    const form = document.getElementById(formId) as HTMLFormElement | null;
-    const selector = document.getElementById(selectorId) as HTMLSelectElement | null;
-    const dynamicContainer = document.getElementById(dynamicContainerId);
-    const btnClear = document.getElementById('btn-clear');
+const DIRECT: MethodId[] = ['gauss', 'gauss-jordan', 'lu', 'cholesky', 'inverse', 'cramer'];
+const ITERATIVE: MethodId[] = ['jacobi', 'gauss-seidel'];
 
-    if (!form || !selector || !dynamicContainer) {
-        console.error("Method form elements not found.");
-        return;
+function field(name: string, label: string, value = '', type = 'text'): string {
+    return `<div class="form-group"><label>${label}</label><input name="${name}" type="${type}" step="any" value="${value}" /></div>`;
+}
+
+function systemMarkup(method: MethodId, preset: ExamplePreset): string {
+    const size = Number(preset.fields.size ?? 3);
+    const max = method === 'cramer' ? 4 : 6;
+    const showPivot = method === 'gauss' || method === 'gauss-jordan' || method === 'lu';
+    const showX0 = ITERATIVE.includes(method);
+    const cells: string[] = [];
+    for (let i = 0; i < size; i++) {
+        for (let j = 0; j < size; j++) cells.push(`<input name="a_${i}_${j}" type="number" step="any" value="${preset.fields[`a_${i}_${j}`] ?? 0}" aria-label="a ${i + 1} ${j + 1}" />`);
     }
+    const bCells = Array.from({ length: size }, (_, i) => `<input name="b_${i}" type="number" step="any" value="${preset.fields[`b_${i}`] ?? 0}" aria-label="b ${i + 1}" />`).join('');
+    const x0 = showX0
+        ? `<p class="etiqueta">Aproximación inicial</p><div class="matrix-grid" style="--cols:${size}">${Array.from({ length: size }, (_, i) => `<input name="x0_${i}" type="number" step="any" value="${preset.fields[`x0_${i}`] ?? 0}" />`).join('')}</div>`
+        : '';
+    const stop = showX0 ? stopMarkup(preset) : '';
+    return `
+        ${field('size', 'Tamaño', String(size), 'number').replace('step="any"', `min="2" max="${max}" step="1"`)}
+        <p class="etiqueta">Matriz A</p>
+        <div class="matrix-grid" style="--cols:${size}">${cells.join('')}</div>
+        <p class="etiqueta">Vector b</p>
+        <div class="matrix-grid" style="--cols:${size}">${bCells}</div>
+        ${showPivot ? `<label class="check"><input type="checkbox" name="pivot" value="1" ${preset.fields.pivot === '0' ? '' : 'checked'} /> Usar pivoteo parcial</label>` : ''}
+        ${x0}
+        ${stop}
+    `;
+}
 
-    const renderDynamicFields = (method: NumericalMethod) => {
-        let html = '';
+function stopMarkup(preset: ExamplePreset): string {
+    return `
+        <div class="form-group-row">
+            ${field('tolerance', 'Tolerancia', preset.fields.tolerance ?? '1e-6')}
+            ${field('maxIterations', 'Iteraciones', preset.fields.maxIterations ?? '25', 'number')}
+        </div>
+        <div class="form-group">
+            <label>Norma</label>
+            <select name="norm">
+                <option value="inf" ${preset.fields.norm === '1' || preset.fields.norm === '2' ? '' : 'selected'}>Infinito</option>
+                <option value="1" ${preset.fields.norm === '1' ? 'selected' : ''}>Norma 1</option>
+                <option value="2" ${preset.fields.norm === '2' ? 'selected' : ''}>Euclidiana</option>
+            </select>
+        </div>
+    `;
+}
 
-        switch (method) {
-            case 'bisection':
-            case 'false-position':
-                html = `
-                    <div class="form-group-row">
-                        <div class="form-group">
-                            <label for="input-a">Límite a</label>
-                            <input type="number" step="any" id="input-a" name="a" placeholder="p. ej. 1" required />
-                        </div>
-                        <div class="form-group">
-                            <label for="input-b">Límite b</label>
-                            <input type="number" step="any" id="input-b" name="b" placeholder="p. ej. 2" required />
-                        </div>
-                    </div>
-                `;
-                break;
-            case 'fixed-point':
-                html = `
-                    <div class="form-group">
-                        <div class="field-header">
-                            <label for="input-gx">Función g(x)</label>
-                            <span class="field-badge-hint">Iteración xₖ₊₁ = g(xₖ)</span>
-                        </div>
-                        <input type="text" id="input-gx" name="gx" required autocomplete="off" placeholder="p. ej. (x + 2)^(1/3)" />
-                        <div id="gx-variations" class="gx-variations"></div>
-                    </div>
-                    <div class="form-group">
-                        <label for="input-x0">Punto Inicial x0</label>
-                        <input type="number" step="any" id="input-x0" name="x0" required placeholder="p. ej. 1.5" />
-                    </div>
-                `;
-                break;
-            case 'newton-raphson':
-                html = `
-                    <div class="form-group">
-                        <label for="input-x0">Punto Inicial x0</label>
-                        <input type="number" step="any" id="input-x0" name="x0" placeholder="p. ej. 1.5" required />
-                    </div>
-                `;
-                break;
-            case 'secant':
-                html = `
-                    <div class="form-group-row">
-                        <div class="form-group">
-                            <label for="input-x0">Punto x0</label>
-                            <input type="number" step="any" id="input-x0" name="x0" placeholder="p. ej. 1.0" required />
-                        </div>
-                        <div class="form-group">
-                            <label for="input-x1">Punto x1</label>
-                            <input type="number" step="any" id="input-x1" name="x1" placeholder="p. ej. 2.0" required />
-                        </div>
-                    </div>
-                `;
-                break;
-            case 'muller':
-                html = `
-                    <div class="form-group-row">
-                        <div class="form-group">
-                            <label for="input-x0">x0</label>
-                            <input type="number" step="any" id="input-x0" name="x0" placeholder="p. ej. 0" required />
-                        </div>
-                        <div class="form-group">
-                            <label for="input-x1">x1</label>
-                            <input type="number" step="any" id="input-x1" name="x1" placeholder="p. ej. 1" required />
-                        </div>
-                        <div class="form-group">
-                            <label for="input-x2">x2</label>
-                            <input type="number" step="any" id="input-x2" name="x2" placeholder="p. ej. 2" required />
-                        </div>
-                    </div>
-                `;
-                break;
+function equationMarkup(preset: ExamplePreset, kind: 'f' | 'g'): string {
+    const count = Number(preset.fields.eqCount ?? 2);
+    const rows = Array.from({ length: count }, (_, index) => `
+        <div class="form-group">
+            <label>${kind}${index + 1}(${['x', 'y', 'z', 'u', 'v', 'w'].slice(0, count).join(', ')})</label>
+            <input name="eq_${index}" type="text" value="${preset.fields[`eq_${index}`] ?? ''}" spellcheck="false" />
+        </div>
+        ${field(`x0_${index}`, `Valor inicial ${['x', 'y', 'z', 'u', 'v', 'w'][index]}`, preset.fields[`x0_${index}`] ?? '0', 'number')}
+    `).join('');
+    return `
+        <input type="hidden" name="eqCount" value="${count}" />
+        ${rows}
+        <div class="inline-actions"><button type="button" id="btn-add-eq" class="btn-secondary">Agregar ecuación</button></div>
+        ${stopMarkup(preset)}
+    `;
+}
+
+function pointMarkup(preset: ExamplePreset, mode: 'lagrange' | 'newton' | 'poly'): string {
+    const rows = Number(preset.fields.rows ?? 2);
+    const body = Array.from({ length: rows }, (_, index) => `
+        <tr>
+            <td><input name="px_${index}" type="number" step="any" value="${preset.fields[`px_${index}`] ?? ''}" /></td>
+            <td><input name="py_${index}" type="number" step="any" value="${preset.fields[`py_${index}`] ?? ''}" /></td>
+        </tr>
+    `).join('');
+    const extra = mode === 'poly'
+        ? field('degree', 'Grado', preset.fields.degree ?? '1', 'number')
+        : `
+            ${field('at', 'Aproximar en x', preset.fields.at ?? '0', 'number')}
+            ${field('degree', 'Grado', preset.fields.degree ?? '1', 'number')}
+            ${mode === 'lagrange' ? `<div class="form-group"><label>Nodos</label><select name="mode"><option value="apropiados" ${preset.fields.mode === 'todos' ? '' : 'selected'}>Los más cercanos a x</option><option value="todos" ${preset.fields.mode === 'todos' ? 'selected' : ''}>Todos los datos</option></select></div>${field('expression', 'f(x) para la cota, si la piden', preset.fields.expression ?? '')}` : ''}
+            ${mode === 'newton' ? `<div class="form-group"><label>Forma</label><select name="form"><option value="auto" ${preset.fields.form && preset.fields.form !== 'auto' ? '' : 'selected'}>La más apropiada</option><option value="progresiva" ${preset.fields.form === 'progresiva' ? 'selected' : ''}>Progresiva</option><option value="regresiva" ${preset.fields.form === 'regresiva' ? 'selected' : ''}>Regresiva</option></select></div>` : ''}
+        `;
+    return `
+        <input type="hidden" name="rows" value="${rows}" />
+        <table class="point-table"><thead><tr><th>x</th><th>y</th></tr></thead><tbody>${body}</tbody></table>
+        <div class="inline-actions"><button type="button" id="btn-add-row" class="btn-secondary">Agregar fila</button></div>
+        ${extra}
+    `;
+}
+
+function multipleMarkup(preset: ExamplePreset): string {
+    const rows = Number(preset.fields.rows ?? 4);
+    const body = Array.from({ length: rows }, (_, index) => `
+        <tr>
+            <td><input name="x1_${index}" type="number" step="any" value="${preset.fields[`x1_${index}`] ?? ''}" /></td>
+            <td><input name="x2_${index}" type="number" step="any" value="${preset.fields[`x2_${index}`] ?? ''}" /></td>
+            <td><input name="y_${index}" type="number" step="any" value="${preset.fields[`y_${index}`] ?? ''}" /></td>
+        </tr>
+    `).join('');
+    return `
+        <input type="hidden" name="rows" value="${rows}" />
+        <table class="point-table"><thead><tr><th>x1</th><th>x2</th><th>y</th></tr></thead><tbody>${body}</tbody></table>
+        <div class="inline-actions"><button type="button" id="btn-add-row" class="btn-secondary">Agregar fila</button></div>
+    `;
+}
+
+function markup(method: MethodId, preset: ExamplePreset): string {
+    if (DIRECT.includes(method) || ITERATIVE.includes(method)) return systemMarkup(method, preset);
+    if (method === 'newton-system') return equationMarkup(preset, 'f');
+    if (method === 'fixed-point-system') return equationMarkup(preset, 'g');
+    if (method === 'lagrange') return pointMarkup(preset, 'lagrange');
+    if (method === 'newton-divided') return pointMarkup(preset, 'newton');
+    if (method === 'regression-poly') return pointMarkup(preset, 'poly');
+    return multipleMarkup(preset);
+}
+
+function readFields(container: HTMLElement): Record<string, string> {
+    const fields: Record<string, string> = {};
+    container.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input[name], select[name]').forEach((element) => {
+        if (element instanceof HTMLInputElement && element.type === 'checkbox') {
+            fields[element.name] = element.checked ? '1' : '0';
+        } else {
+            fields[element.name] = element.value;
         }
+    });
+    return fields;
+}
 
-        dynamicContainer.innerHTML = html;
+export function setupMethodForm(onResolve: () => void, onClear: () => void): void {
+    const form = document.getElementById('resolver-form') as HTMLFormElement | null;
+    const selector = document.getElementById('method-selector') as HTMLSelectElement | null;
+    const dynamic = document.getElementById('dynamic-parameters');
+    const examples = document.getElementById('example-list');
+    const help = document.getElementById('method-help');
+    const clear = document.getElementById('btn-clear');
+    if (!form || !selector || !dynamic || !examples || !help) return;
+
+    let exampleIndex = 0;
+
+    const paint = (method: MethodId) => {
+        const presets = EXAMPLES[method];
+        exampleIndex = Math.min(exampleIndex, presets.length - 1);
+        const preset = presets[exampleIndex];
+        help.textContent = METHOD_HELP[method];
+        examples.innerHTML = presets.map((item, index) =>
+            `<button type="button" class="btn-secondary ${index === exampleIndex ? 'active' : ''}" data-example="${index}">${item.name}</button>`
+        ).join('');
+        dynamic.innerHTML = markup(method, preset);
+        bindLocal(method);
     };
 
-    renderDynamicFields(selector.value as NumericalMethod);
+    const bindLocal = (method: MethodId) => {
+        dynamic.querySelector<HTMLInputElement>('input[name="size"]')?.addEventListener('change', () => {
+            const current = readFields(dynamic);
+            const max = method === 'cramer' ? 4 : 6;
+            const size = Math.min(max, Math.max(2, Number(current.size) || 2));
+            current.size = String(size);
+            const preset = { name: 'actual', fields: current };
+            dynamic.innerHTML = systemMarkup(method, preset);
+            bindLocal(method);
+        });
+        dynamic.querySelector('#btn-add-row')?.addEventListener('click', () => {
+            const current = readFields(dynamic);
+            const rows = Number(current.rows ?? 0) + 1;
+            current.rows = String(rows);
+            dynamic.innerHTML = method === 'regression-multiple' ? multipleMarkup({ name: 'actual', fields: current }) : pointMarkup({ name: 'actual', fields: current }, method === 'lagrange' ? 'lagrange' : method === 'newton-divided' ? 'newton' : 'poly');
+            bindLocal(method);
+        });
+        dynamic.querySelector('#btn-add-eq')?.addEventListener('click', () => {
+            const current = readFields(dynamic);
+            const count = Math.min(6, Number(current.eqCount ?? 2) + 1);
+            current.eqCount = String(count);
+            dynamic.innerHTML = equationMarkup({ name: 'actual', fields: current }, method === 'fixed-point-system' ? 'g' : 'f');
+            bindLocal(method);
+        });
+    };
 
-    selector.addEventListener('change', (e) => {
-        const target = e.target as HTMLSelectElement;
-        renderDynamicFields(target.value as NumericalMethod);
+    paint(selector.value as MethodId);
+
+    selector.addEventListener('change', () => {
+        if (!isMethodId(selector.value)) return;
+        exampleIndex = 0;
+        paint(selector.value);
         onClear();
     });
 
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        if (form.checkValidity()) {
-            onResolve();
-        } else {
-            form.reportValidity();
-        }
+    examples.addEventListener('click', (event) => {
+        const button = (event.target as HTMLElement).closest('button[data-example]') as HTMLButtonElement | null;
+        if (!button || !isMethodId(selector.value)) return;
+        exampleIndex = Number(button.dataset.example ?? 0);
+        paint(selector.value);
+        onClear();
     });
 
-    if (btnClear) {
-        btnClear.addEventListener('click', () => {
-            form.reset();
-            renderDynamicFields(selector.value as NumericalMethod);
-            onClear();
-        });
-    }
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        onResolve();
+    });
+
+    clear?.addEventListener('click', () => {
+        if (!isMethodId(selector.value)) return;
+        exampleIndex = 0;
+        paint(selector.value);
+        onClear();
+    });
+}
+
+export function currentFields(): Record<string, string> {
+    const form = document.getElementById('resolver-form');
+    if (!form) return {};
+    return readFields(form);
 }
