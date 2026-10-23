@@ -1,8 +1,7 @@
 import { MathError } from '../math/errors';
-import { formatEs, subscript, vectorText } from '../math/format';
+import { formatEs, octaveNum, subscript, vectorText } from '../math/format';
 import {
     assertSystem,
-    backSubstitute,
     backwardSubstitution,
     choleskyLower,
     conditionInfinity,
@@ -20,7 +19,7 @@ import {
     Vector
 } from '../math/matrix';
 import { octaveHeader, octaveMatrix, octaveVector } from '../octave/text';
-import { SolveResult, SystemInput, TableData } from '../types/numerical';
+import { GraphSpec, SolveResult, SystemInput, TableData } from '../types/numerical';
 
 const headersOf = (size: number, extra: string[] = ['b']): string[] => [
     ...Array.from({ length: size }, (_, index) => `x${subscript(index + 1)}`),
@@ -53,7 +52,8 @@ function directResult(
     tables: TableData[],
     octave: string,
     A: Matrix,
-    note?: string
+    note?: string,
+    graph?: GraphSpec
 ): SolveResult {
     const condition = conditionDetail(A);
     return {
@@ -69,7 +69,7 @@ function directResult(
         ],
         tables,
         octave,
-        graph: {
+        graph: graph ?? {
             type: 'bars',
             title: 'Solución',
             labels: solution.map((_, index) => `x${subscript(index + 1)}`),
@@ -79,6 +79,58 @@ function directResult(
         values: solution,
         extra: {}
     };
+}
+
+function rowLiteral(row: number[]): string {
+    return `[${row.map((value) => octaveNum(value)).join(' ')}]`;
+}
+
+function gaussClassProcedure(A: Matrix, b: Vector, pivot: boolean): { solution: Vector; tables: TableData[]; octave: string } {
+    const n = A.length;
+    const width = n + 1;
+    const rows = A.map((row, index) => [...row, b[index]]);
+    const name = (index: number) => `f${index + 1}`;
+    const lines = [
+        '% Eliminación gaussiana',
+        '% Cada pivote se vuelve 1 y se anulan las demás casillas de su columna.',
+        '',
+        ...rows.map((row, index) => `${name(index)} = ${rowLiteral(row)}`)
+    ];
+    const tables: TableData[] = [matrixTable('Matriz aumentada', rows.map((row) => [...row]), n, headersOf(n))];
+    const record = (title: string) => {
+        tables.push(matrixTable(title, rows.map((row) => [...row]), n, headersOf(n)));
+    };
+
+    for (let k = 0; k < n; k++) {
+        if (pivot) {
+            let chosen = k;
+            for (let row = k + 1; row < n; row++) {
+                if (Math.abs(rows[row][k]) > Math.abs(rows[chosen][k])) chosen = row;
+            }
+            if (chosen !== k) {
+                [rows[k], rows[chosen]] = [rows[chosen], rows[k]];
+                lines.push(`tmp = ${name(k)}`);
+                lines.push(`${name(k)} = ${name(chosen)}`);
+                lines.push(`${name(chosen)} = tmp`);
+                record(`Se intercambian ${name(k)} y ${name(chosen)}`);
+            }
+        }
+        lines.push(`${name(k)} = ${name(k)}/${name(k)}(${k + 1})`);
+        const pivotValue = rows[k][k];
+        for (let column = k; column < width; column++) rows[k][column] /= pivotValue;
+        record(`${name(k)} = ${name(k)}/${name(k)}(${k + 1})`);
+        for (let row = 0; row < n; row++) {
+            if (row === k || Math.abs(rows[row][k]) < 1e-15) continue;
+            lines.push(`${name(row)} = -${name(row)}(${k + 1})*${name(k)} + ${name(row)}`);
+            const factor = rows[row][k];
+            for (let column = k; column < width; column++) rows[row][column] -= factor * rows[k][column];
+            record(`${name(row)} = -${name(row)}(${k + 1})*${name(k)} + ${name(row)}`);
+        }
+    }
+
+    const solution = rows.map((row) => row[n]);
+    lines.push(`x = [${solution.map((_, index) => `${name(index)}(${n + 1})`).join('; ')}]`);
+    return { solution, tables, octave: lines.join('\n') };
 }
 
 function gaussOctave(A: Matrix, b: Vector, pivot: boolean, jordan: boolean): string {
@@ -118,27 +170,32 @@ function snapshotsToTables(snapshots: Snapshot[], size: number): TableData[] {
 
 export function solveGauss(input: SystemInput, jordan = false): SolveResult {
     const n = assertSystem(input.A, input.b);
-    const { solution, snapshots } = solveSystem(input.A, input.b, input.pivot, jordan);
-    const tables = snapshotsToTables(snapshots, n);
     if (!jordan) {
-        const upper = snapshots[snapshots.length - 1].matrix;
-        const check = backSubstitute(upper);
-        tables.push({
-            title: 'Sustitución regresiva',
+        const procedure = gaussClassProcedure(input.A, input.b, input.pivot);
+        procedure.tables.push({
+            title: 'Solución',
             headers: ['Incógnita', 'Valor'],
-            rows: check.map((value, index) => [`x${subscript(index + 1)}`, value]),
+            rows: procedure.solution.map((value, index) => [`x${subscript(index + 1)}`, value]),
             markColumn: 1
         });
+        return directResult(
+            'Eliminación de Gauss',
+            procedure.solution,
+            procedure.tables,
+            procedure.octave,
+            input.A,
+            'Se divide la fila del pivote y cada otra fila se actualiza con fi = -fi(k)*fk + fi. Al final la solución está en la última columna.',
+            { type: 'none' }
+        );
     }
+    const { solution, snapshots } = solveSystem(input.A, input.b, input.pivot, true);
     return directResult(
-        jordan ? 'Gauss-Jordan' : 'Eliminación de Gauss',
+        'Gauss-Jordan',
         solution,
-        tables,
-        gaussOctave(input.A, input.b, input.pivot, jordan),
+        snapshotsToTables(snapshots, n),
+        gaussOctave(input.A, input.b, input.pivot, true),
         input.A,
-        jordan
-            ? 'La matriz queda reducida a la identidad. La solución es la última columna.'
-            : 'La matriz queda triangular. La solución sale por sustitución regresiva.'
+        'La matriz queda reducida a la identidad. La solución es la última columna.'
     );
 }
 
@@ -228,36 +285,46 @@ export function solveCramer(input: SystemInput): SolveResult {
         throw new MathError('SINGULAR', 'El determinante es cero. Cramer no aplica.');
     }
     const solution: Vector = [];
-    const tables: TableData[] = [{
-        title: 'Determinante de A',
-        headers: ['det(A)'],
-        rows: [[detA]],
-        markColumn: 0
-    }];
-    for (let column = 0; column < n; column++) {
-        const replaced = input.A.map((row, index) => row.map((value, j) => (j === column ? input.b[index] : value)));
-        const det = determinant(replaced);
-        solution.push(det / detA);
-        tables.push(matrixTable(`Matriz de x${subscript(column + 1)}`, replaced));
+    const replacedMatrices = Array.from({ length: n }, (_, column) =>
+        input.A.map((row, index) => row.map((value, j) => (j === column ? input.b[index] : value)))
+    );
+    const determinants = replacedMatrices.map((matrix) => determinant(matrix));
+    determinants.forEach((det) => solution.push(det / detA));
+    const tables: TableData[] = [
+        matrixTable('A', input.A),
+        { title: 'DA = det(A)', headers: ['DA'], rows: [[detA]], markColumn: 0 }
+    ];
+    replacedMatrices.forEach((matrix, column) => {
+        const label = column + 1;
+        tables.push(matrixTable(`X${label}`, matrix));
         tables.push({
-            title: `x${subscript(column + 1)}`,
-            headers: ['det', 'valor'],
-            rows: [[det, det / detA]],
+            title: `x${label} = DX${label}/DA`,
+            headers: [`DX${label}`, `x${label}`],
+            rows: [[determinants[column], solution[column]]],
             markColumn: 1
         });
-    }
-    const octave = `${octaveHeader('Regla de Cramer')}
-${octaveMatrix('A', input.A)}
-${octaveVector('b', input.b)}
-n = size(A, 1);
-detA = det(A);
-x = zeros(n, 1);
-for k = 1:n
-  Ak = A;
-  Ak(:, k) = b;
-  x(k) = det(Ak) / detA;
-end
-disp(x);
+    });
+    const steps = replacedMatrices.map((matrix, column) => {
+        const label = column + 1;
+        return `${octaveMatrix(`X${label}`, matrix).replace(/;$/, '')}
+DX${label} = det(X${label})`;
+    }).join('\n');
+    const quotients = solution.map((_, column) => `x${column + 1} = DX${column + 1}/DA`).join('\n');
+    const octave = `${octaveHeader('Método de Cramer')}
+${octaveMatrix('A', input.A).replace(/;$/, '')}
+${octaveVector('B', input.b).replace(/;$/, '')}
+${steps}
+DA = det(A)
+${quotients}
+x = [${solution.map((_, index) => `x${index + 1}`).join('; ')}]
 `;
-    return directResult('Regla de Cramer', solution, tables, octave, input.A, 'Cada incógnita es el determinante de A, con la columna correspondiente reemplazada por b, dividido entre det(A).');
+    return directResult(
+        'Regla de Cramer',
+        solution,
+        tables,
+        octave,
+        input.A,
+        'Cada incógnita es el determinante de A, con la columna correspondiente reemplazada por b, dividido entre det(A).',
+        { type: 'none' }
+    );
 }

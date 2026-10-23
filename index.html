@@ -13,7 +13,7 @@
         </div>
         <nav>
             <a href="#" id="nav-resolver" class="active">Resolver</a>
-            <a href="#" id="nav-compare">Comparar</a>
+            <a href="#" id="nav-compare" class="hidden">Comparar</a>
             <a href="#" id="nav-history">Historial</a>
         </nav>
     </header>
@@ -32,29 +32,15 @@
                             <label for="method-selector">Método numérico</label>
                             <div class="select-wrapper">
                                 <select id="method-selector" name="method">
-                                    <optgroup label="Sistemas directos">
-                                        <option value="gauss">Eliminación de Gauss</option>
-                                        <option value="gauss-jordan">Gauss-Jordan</option>
-                                        <option value="lu">Factorización LU</option>
-                                        <option value="cholesky">Cholesky</option>
-                                        <option value="inverse">Inversa</option>
+                                    <optgroup label="Sistemas de ecuaciones">
                                         <option value="cramer">Cramer</option>
-                                    </optgroup>
-                                    <optgroup label="Sistemas iterativos">
-                                        <option value="jacobi">Jacobi</option>
-                                        <option value="gauss-seidel">Gauss-Seidel</option>
-                                    </optgroup>
-                                    <optgroup label="Sistemas no lineales">
-                                        <option value="newton-system">Newton para sistemas</option>
-                                        <option value="fixed-point-system">Punto fijo para sistemas</option>
+                                        <option value="gauss">Eliminación gaussiana</option>
                                     </optgroup>
                                     <optgroup label="Interpolación">
-                                        <option value="lagrange">Lagrange</option>
-                                        <option value="newton-divided">Newton, diferencias divididas</option>
+                                        <option value="newton-divided">Interpolación de Newton</option>
                                     </optgroup>
                                     <optgroup label="Ajuste de curvas">
                                         <option value="regression-poly">Regresión polinomial</option>
-                                        <option value="regression-multiple">Regresión múltiple</option>
                                     </optgroup>
                                 </select>
                             </div>

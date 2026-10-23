@@ -6,19 +6,19 @@ export interface ExamplePreset {
 }
 
 export const METHOD_HELP: Record<MethodId, string> = {
-    gauss: 'Convierte el sistema en una triangular superior y despeja desde la última incógnita.',
+    gauss: 'Escribe cada ecuación como una fila. El pivote se vuelve 1 y las demás filas se actualizan con fi = -fi(k)*fk + fi. La solución queda en la última columna.',
     'gauss-jordan': 'Sigue eliminando hasta dejar la identidad. La solución queda en la última columna.',
     lu: 'Factoriza PA = LU con unos en la diagonal de L y resuelve dos sistemas triangulares.',
     cholesky: 'Solo si A es simétrica y definida positiva. Factoriza A = L Lᵀ y resuelve Ly = b, Lᵀx = y.',
     inverse: 'Lleva [A | I] hasta [I | A⁻¹] y multiplica la inversa por b.',
-    cramer: 'Cada incógnita es un cociente de determinantes. Sirve hasta sistemas de 4×4.',
+    cramer: 'Sistema de ecuaciones. xᵢ = DXᵢ/DA: en cada matriz se cambia una columna por b y se divide ese determinante entre det(A).',
     jacobi: 'Cada incógnita nueva usa solo los valores de la iteración anterior.',
     'gauss-seidel': 'Cada incógnita nueva usa enseguida los valores que ya se actualizaron.',
     'newton-system': 'Escribe las ecuaciones igualadas a cero, con variables x, y, z. La app deriva la jacobiana.',
     'fixed-point-system': 'Escribe cada g. La iteración reemplaza el vector por g(x, y, …).',
     lagrange: 'Arma el polinomio con los nodos. Puedes usar los más cercanos a x o todos los datos.',
-    'newton-divided': 'Construye las diferencias divididas y elige la forma progresiva o regresiva.',
-    'regression-poly': 'Ajusta un polinomio por ecuaciones normales y muestra r² y Sy/x.',
+    'newton-divided': 'Interpolación. Arma la tabla de diferencias divididas y aproxima con la forma progresiva o regresiva.',
+    'regression-poly': 'Ajuste de curvas. El grado 1 es la recta. Puedes pedir el valor del polinomio en un x.',
     'regression-multiple': 'Ajusta y = a0 + a1 x1 + a2 x2. La primera casilla de la matriz normal es n.'
 };
 
@@ -60,8 +60,8 @@ const iterativeExtra = {
 
 export const EXAMPLES: Record<MethodId, ExamplePreset[]> = {
     gauss: [
-        { name: 'Sistema de la clase', fields: system(CLASS_A, CLASS_B) },
-        { name: 'Taller', fields: system(TALLER_A, TALLER_B) }
+        { name: 'Ejemplo 1', fields: system(CLASS_A, CLASS_B, { pivot: '0' }) },
+        { name: 'Ejemplo 2', fields: system(TALLER_A, TALLER_B, { pivot: '0' }) }
     ],
     'gauss-jordan': [
         { name: 'Sistema de la clase', fields: system(CLASS_A, CLASS_B) }
@@ -76,7 +76,11 @@ export const EXAMPLES: Record<MethodId, ExamplePreset[]> = {
         { name: 'Taller', fields: system(TALLER_A, TALLER_B) }
     ],
     cramer: [
-        { name: 'Taller', fields: system(TALLER_A, TALLER_B) }
+        {
+            name: 'Ejemplo 1',
+            fields: system([[0.3, 0.52, 1], [0.5, 1, 1.9], [0.1, 0.3, 0.5]], [-0.01, 0.67, -0.44])
+        },
+        { name: 'Ejemplo 2', fields: system(TALLER_A, TALLER_B) }
     ],
     jacobi: [
         { name: 'Tarea, ya reordenado', fields: system(JACOBI_A, JACOBI_B, iterativeExtra) }
@@ -134,7 +138,15 @@ export const EXAMPLES: Record<MethodId, ExamplePreset[]> = {
     ],
     'newton-divided': [
         {
-            name: 'sen(0.34)',
+            name: 'Ejemplo 1',
+            fields: points([[2, 0.5103757], [2.2, 0.5207843], [2.4, 0.5104147], [2.6, 0.4813306], [2.8, 0.4359160]], {
+                at: '2.1',
+                degree: '4',
+                form: 'progresiva'
+            })
+        },
+        {
+            name: 'Ejemplo 2',
             fields: points([[0.3, 0.29552], [0.32, 0.31457], [0.33, 0.32404], [0.35, 0.3429]], {
                 at: '0.34',
                 degree: '3',
@@ -144,12 +156,12 @@ export const EXAMPLES: Record<MethodId, ExamplePreset[]> = {
     ],
     'regression-poly': [
         {
-            name: 'Pérdida de peso, recta',
-            fields: points([[1, 9], [2, 7.5], [3, 4.2], [4, 3], [5, 2.1]], { degree: '1' })
+            name: 'Ejemplo 1',
+            fields: points([[0, 2.1], [1, 7.7], [2, 13.6], [3, 27.2], [4, 40.9], [5, 61.1]], { degree: '2', at: '7' })
         },
         {
-            name: 'Parábola de la sesión',
-            fields: points([[0, 2.1], [1, 7.7], [2, 13.6], [3, 27.2], [4, 40.9], [5, 61.1]], { degree: '2' })
+            name: 'Ejemplo 2',
+            fields: points([[1, 9], [2, 7.5], [3, 4.2], [4, 3], [5, 2.1]], { degree: '1', at: '2.5' })
         }
     ],
     'regression-multiple': [

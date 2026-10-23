@@ -65,6 +65,7 @@ export interface NewtonDividedInput extends BaseInput {
 export interface PolyRegInput extends BaseInput {
     points: Point[];
     degree: number;
+    at?: number;
 }
 
 export interface MultiRow {

@@ -1,6 +1,6 @@
 import { MathError } from '../math/errors';
 import { formatEs } from '../math/format';
-import { Matrix, Vector, solveSystem, zeros } from '../math/matrix';
+import { Matrix, Vector, inverse, solveSystem, zeros } from '../math/matrix';
 import { octaveHeader } from '../octave/text';
 import { MultiRegInput, PolyRegInput, SolveResult } from '../types/numerical';
 
@@ -43,14 +43,20 @@ export function solvePolyReg(input: PolyRegInput): SolveResult {
         rhs[row] = points.reduce((sum, point) => sum + point.y * point.x ** row, 0);
     }
     const coefficients = solveNormal(C, rhs);
+    const observed = points.map((point) => point.y);
     const predicted = points.map((point) => evalPoly(coefficients, point.x));
-    const stats = fitStats(points.map((point) => point.y), predicted, size);
-    const left = points[0].x;
-    const right = points[points.length - 1].x;
+    const stats = fitStats(observed, predicted, size);
+    const mean = observed.reduce((sum, value) => sum + value, 0) / observed.length;
+    const invC = inverse(C);
+    const hasAt = input.at !== undefined && Number.isFinite(input.at);
+    const prediction = hasAt ? evalPoly(coefficients, input.at as number) : undefined;
+    const left = Math.min(points[0].x, hasAt ? input.at as number : points[0].x);
+    const right = Math.max(points[points.length - 1].x, hasAt ? input.at as number : points[points.length - 1].x);
+    const span = right - left || 1;
     const xs: number[] = [];
     const ys: number[] = [];
     for (let step = 0; step <= 80; step++) {
-        const x = left + ((right - left) * step) / 80;
+        const x = left + (span * step) / 80;
         xs.push(x);
         ys.push(evalPoly(coefficients, x));
     }
@@ -58,25 +64,63 @@ export function solvePolyReg(input: PolyRegInput): SolveResult {
         if (power === 0) return formatEs(coefficient);
         return `${formatEs(coefficient)} x^${power}`;
     }).join(' + ').replace(/\+ -/g, '- ');
+    const power = (exponent: number) => exponent <= 1 ? 'xi' : `xi^${exponent}`;
+    const headers = ['i', 'xi', 'yi'];
+    for (let exponent = 2; exponent <= degree * 2; exponent++) headers.push(power(exponent));
+    for (let exponent = 1; exponent <= degree; exponent++) headers.push(exponent === 1 ? 'xi·yi' : `xi^${exponent}·yi`);
+    headers.push('(P-y)^2', '(y-media)^2');
+    const dataRows = points.map((point, index) => {
+        const row: (number | string)[] = [index + 1, point.x, point.y];
+        for (let exponent = 2; exponent <= degree * 2; exponent++) row.push(point.x ** exponent);
+        for (let exponent = 1; exponent <= degree; exponent++) row.push(point.y * point.x ** exponent);
+        row.push((predicted[index] - point.y) ** 2, (point.y - mean) ** 2);
+        return row;
+    });
+    const totals = dataRows[0].map((_, column) => {
+        if (column === 0) return 'Σ';
+        return dataRows.reduce((sum, row) => sum + Number(row[column]), 0);
+    });
+    const relation = Math.sqrt(Math.max(stats.r2, 0));
+    const slope = coefficients[1] ?? 0;
+    const direction = slope < 0 ? 'inversa' : 'directa';
+    const strength = relation >= 0.9 ? 'alta' : relation >= 0.7 ? 'moderada' : 'baja';
+    const percent = formatEs(stats.r2 * 100, 2);
+    const evaluate = hasAt
+        ? `xq = ${input.at};
+Px = 0;
+for k = 0:m
+  Px = Px + a(k + 1) * xq ^ k;
+end
+disp('Aproximación');
+disp(Px);
+`
+        : '';
 
     return {
         converged: true,
         status: 'Ajuste calculado',
-        headlineLabel: 'Polinomio',
+        headlineLabel: degree === 1 ? 'Recta' : 'Polinomio',
         headline: formula,
-        secondaryLabel: 'r²',
-        secondary: formatEs(stats.r2, 6),
+        secondaryLabel: prediction !== undefined ? `P(${formatEs(input.at as number)})` : 'r²',
+        secondary: prediction !== undefined ? formatEs(prediction) : formatEs(stats.r2, 6),
         details: [
-            { label: 'Q', value: formatEs(stats.Q) },
-            { label: 'St', value: formatEs(stats.St) },
-            { label: 'Sy/x', value: formatEs(stats.syx) }
+            { label: 'n, número de datos', value: String(points.length) },
+            { label: 'Grado del polinomio', value: String(degree) },
+            { label: 'Media de y', value: formatEs(mean) },
+            { label: 'Q, suma de cuadrados del error', value: formatEs(stats.Q) },
+            { label: 'St, variación total de y', value: formatEs(stats.St) },
+            { label: 'r², coeficiente de determinación', value: `${formatEs(stats.r2, 8)} · explica el ${percent}% de la variación de y` },
+            { label: 'r, coeficiente de correlación', value: `${formatEs(relation, 8)} · relación ${direction} y ${strength}` },
+            { label: 'Sy/x, error estándar de la estimación', value: formatEs(stats.syx) },
+            ...(prediction !== undefined ? [{ label: `Valor estimado en x = ${formatEs(input.at as number)}`, value: formatEs(prediction) }] : [])
         ],
         tables: [
-            { title: 'Ecuaciones normales', headers: [...coefficients.map((_, index) => `a${index}`), 'b'], rows: C.map((row, index) => [...row, rhs[index]]), markColumn: size },
-            { title: 'Coeficientes', headers: ['k', 'ak'], rows: coefficients.map((coefficient, index) => [index, coefficient]), markColumn: 1 },
-            { title: 'Datos y estimación', headers: ['x', 'y', 'estimado'], rows: points.map((point, index) => [point.x, point.y, predicted[index]]), markColumn: 2 }
+            { title: 'Sumas para las ecuaciones normales', headers, rows: [...dataRows, totals] },
+            { title: 'Matriz C y vector b', headers: [...coefficients.map((_, index) => `a${index}`), 'b'], rows: C.map((row, index) => [...row, rhs[index]]), markColumn: size },
+            { title: 'Inversa de C', headers: coefficients.map((_, index) => `c${index}`), rows: invC },
+            { title: 'Coeficientes', headers: ['k', 'ak'], rows: coefficients.map((coefficient, index) => [index, coefficient]), markColumn: 1 }
         ],
-        octave: `${octaveHeader('Regresión polinomial')}
+        octave: `${octaveHeader(degree === 1 ? 'Regresión lineal' : 'Regresión polinomial')}
 x = [${points.map((point) => point.x).join(' ')}]';
 y = [${points.map((point) => point.y).join(' ')}]';
 n = length(x);
@@ -85,22 +129,33 @@ C = zeros(m + 1);
 b = zeros(m + 1, 1);
 for i = 0:m
   for j = 0:m
-    C(i+1, j+1) = sum(x .^ (i + j));
+    C(i + 1, j + 1) = sum(x .^ (i + j));
   end
-  b(i+1) = sum(y .* x .^ i);
+  b(i + 1) = sum(y .* x .^ i);
 end
+disp('C'); disp(C);
+disp('b'); disp(b);
 a = inv(C) * b;
+disp('Coeficientes');
 disp(a);
-`,
+Q = sum((polyval(a(end:-1:1)', x) - y) .^ 2);
+media = sum(y) / n;
+St = sum((y - media) .^ 2);
+r2 = (St - Q) / St;
+Syx = sqrt(Q / (n - (m + 1)));
+disp('r2'); disp(r2);
+disp('Syx'); disp(Syx);
+${evaluate}`,
         graph: {
             type: 'curve',
-            title: 'Ajuste polinomial',
+            title: degree === 1 ? 'Regresión lineal' : 'Regresión polinomial',
             nodes: points,
-            curves: [{ name: 'ajuste', xs, ys }]
+            curves: [{ name: degree === 1 ? 'recta' : `grado ${degree}`, xs, ys }],
+            ...(prediction !== undefined ? { marker: { x: input.at as number, y: prediction } } : {})
         },
-        note: 'Los coeficientes salen de las ecuaciones normales, como en el diario de Octave.',
+        note: `El ${percent}% de la variabilidad de y en función de x está expresada en el modelo. La relación es ${direction} y es ${strength}.`,
         values: coefficients,
-        extra: { r2: stats.r2, syx: stats.syx, Q: stats.Q }
+        extra: { r2: stats.r2, syx: stats.syx, Q: stats.Q, ...(prediction !== undefined ? { prediction } : {}) }
     };
 }
 

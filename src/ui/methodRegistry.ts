@@ -83,7 +83,7 @@ const readPoints = (form: FormData) => {
 
 export const METHOD_REGISTRY: Record<MethodId, MethodMeta> = {
     gauss: {
-        displayName: 'Eliminación de Gauss',
+        displayName: 'Eliminación gaussiana',
         buildInput: (form) => readSystem(form),
         solve: (input) => solveGauss(input as SystemInput, false)
     },
@@ -144,7 +144,7 @@ export const METHOD_REGISTRY: Record<MethodId, MethodMeta> = {
         solve: (input) => solveLagrange(input as LagrangeInput)
     },
     'newton-divided': {
-        displayName: 'Newton, diferencias divididas',
+        displayName: 'Interpolación de Newton',
         buildInput: (form) => ({
             points: readPoints(form),
             at: asNumber(form.get('at'), 'x'),
@@ -155,7 +155,14 @@ export const METHOD_REGISTRY: Record<MethodId, MethodMeta> = {
     },
     'regression-poly': {
         displayName: 'Regresión polinomial',
-        buildInput: (form) => ({ points: readPoints(form), degree: asNumber(form.get('degree'), 'grado') } as PolyRegInput),
+        buildInput: (form) => {
+            const at = String(form.get('at') ?? '').trim();
+            return {
+                points: readPoints(form),
+                degree: asNumber(form.get('degree'), 'grado'),
+                ...(at ? { at: asNumber(at, 'aproximación') } : {})
+            } as PolyRegInput;
+        },
         solve: (input) => solvePolyReg(input as PolyRegInput)
     },
     'regression-multiple': {

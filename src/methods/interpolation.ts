@@ -210,6 +210,33 @@ function regressive(points: Point[], degree: number, at: number): number {
     return value;
 }
 
+function termProduct(anchors: number[]): string {
+    return anchors.map((anchor) => `(x-${formatEs(anchor)})`).join('');
+}
+
+function progressiveFormula(points: Point[], degree: number): string {
+    const subset = points.slice(0, degree + 1);
+    const table = differences(subset);
+    let text = formatEs(table[0][0]);
+    for (let order = 1; order <= degree; order++) {
+        text += ` + ${formatEs(table[0][order])}${termProduct(subset.slice(0, order).map((point) => point.x))}`;
+    }
+    return text.replace(/\+ -/g, '- ');
+}
+
+function regressiveFormula(points: Point[], degree: number): string {
+    const subset = points.slice(points.length - (degree + 1));
+    const table = differences(subset);
+    const size = subset.length;
+    let text = formatEs(table[size - 1][0]);
+    for (let order = 1; order <= degree; order++) {
+        const coefficient = table[size - 1 - order][order];
+        const anchors = subset.slice(size - order).map((point) => point.x).reverse();
+        text += ` + ${formatEs(coefficient)}${termProduct(anchors)}`;
+    }
+    return text.replace(/\+ -/g, '- ');
+}
+
 export function solveNewtonDivided(input: NewtonDividedInput): SolveResult {
     const points = assertPoints(input.points);
     const maxDegree = points.length - 1;
@@ -220,28 +247,44 @@ export function solveNewtonDivided(input: NewtonDividedInput): SolveResult {
         ? (distanceEnd < distanceStart ? 'regresiva' : 'progresiva')
         : input.form;
     const evaluate = form === 'regresiva' ? regressive : progressive;
+    const formulaOf = form === 'regresiva' ? regressiveFormula : progressiveFormula;
     const values: number[] = [];
     for (let current = 1; current <= degree; current++) values.push(evaluate(points, current, input.at));
     const table = differences(points);
+    const differenceHeaders = ['i', 'xi', 'f[xk]', ...Array.from({ length: maxDegree }, (_, order) => {
+        const indexes = Array.from({ length: order + 2 }, (_, step) => (step === 0 ? 'xk' : `xk+${step}`)).join(',');
+        return `f[${indexes}]`;
+    })];
     const differenceTable: TableData = {
         title: 'Diferencias divididas',
-        headers: ['x', 'f', ...Array.from({ length: maxDegree }, (_, index) => `orden ${index + 1}`)],
-        rows: points.map((point, row) => [point.x, ...table[row]])
+        headers: differenceHeaders,
+        rows: points.map((point, row) => [
+            row,
+            point.x,
+            ...table[row].map((value, order) => (row + order < points.length ? value : ''))
+        ])
     };
+    const letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
+    const polynomialRows: (number | string)[][] = values.map((value, index) => {
+        const current = index + 1;
+        const label = current === maxDegree ? 'todos los datos' : String(current);
+        return [letters[index] ?? String(current), label, formulaOf(points, current), value];
+    });
     const highest = values[values.length - 1];
+    const forward = form === 'progresiva';
     return {
         converged: true,
         status: form === 'regresiva' ? 'Forma regresiva' : 'Forma progresiva',
         headlineLabel: `P${degree}(${formatEs(input.at)})`,
         headline: formatEs(highest),
-        details: values.map((value, index) => ({ label: `P${index + 1}`, value: formatEs(value) })),
+        details: values.map((value, index) => ({ label: `P${index + 1}(${formatEs(input.at)})`, value: formatEs(value) })),
         tables: [
             differenceTable,
             {
-                title: 'Polinomios',
-                headers: ['Grado', 'P(x)'],
-                rows: values.map((value, index) => [index + 1, value]),
-                markColumn: 1
+                title: `Aproximar en x = ${formatEs(input.at)}`,
+                headers: ['', 'Grado', 'Polinomio', 'P(x)'],
+                rows: polynomialRows,
+                markColumn: 3
             }
         ],
         octave: `${octaveHeader('Newton por diferencias divididas')}
@@ -250,13 +293,28 @@ Y = [${points.map((point) => point.y).join(' ')}];
 xq = ${input.at};
 n = length(X);
 T = zeros(n);
-T(:, 1) = Y';
+T(:, 1) = Y(:);
 for j = 2:n
   for i = 1:n-j+1
     T(i, j) = (T(i+1, j-1) - T(i, j-1)) / (X(i+j-1) - X(i));
   end
 end
 disp(T);
+
+% Forma ${form}
+grado = ${degree};
+for m = 1:grado
+  ${forward
+        ? `P = T(1, m+1);
+  for k = m:-1:1
+    P = T(1, k) + (xq - X(k)) * P;
+  end`
+        : `P = T(n-m, m+1);
+  for k = 1:m
+    P = T(n-m+k, m-k+1) + (xq - X(n-m+k)) * P;
+  end`}
+  fprintf('P%d(%g) = %.10f\\n', m, xq, P);
+end
 `,
         graph: {
             type: 'curve',

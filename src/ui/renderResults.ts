@@ -10,6 +10,14 @@ const showResults = () => {
     document.getElementById('results-container')?.classList.remove('hidden');
 };
 
+const graphTab = (visible: boolean) => {
+    const button = document.querySelector<HTMLButtonElement>('[data-tab="tab-graph"]');
+    button?.classList.toggle('hidden', !visible);
+    if (!visible && button?.classList.contains('active')) {
+        document.querySelector<HTMLButtonElement>('[data-tab="tab-summary"]')?.click();
+    }
+};
+
 const cell = (value: number | string): string =>
     typeof value === 'number' ? formatEs(value) : value;
 
@@ -54,7 +62,8 @@ export function renderResults(input: MethodInput, result: SolveResult, method: M
             });
         });
     }
-    renderChart('plotly-canvas', result.graph);
+    graphTab(result.graph.type !== 'none');
+    if (result.graph.type !== 'none') renderChart('plotly-canvas', result.graph);
     if (code) {
         code.innerHTML = `<div class="table-toolbar"><h3>Código GNU Octave</h3><button type="button" id="copy-octave-btn" class="btn-secondary">Copiar código</button></div><pre><code>${escapeHtml(result.octave)}</code></pre>`;
         document.getElementById('copy-octave-btn')?.addEventListener('click', async () => {
@@ -86,6 +95,7 @@ export function handleError(error: unknown): void {
     const message = error instanceof MathError || error instanceof Error
         ? error.message
         : 'No se pudo resolver el ejercicio.';
+    graphTab(false);
     const summary = document.getElementById('tab-summary');
     if (summary) {
         summary.innerHTML = `<span class="badge badge-error">No se pudo resolver</span><p>${message}</p>`;

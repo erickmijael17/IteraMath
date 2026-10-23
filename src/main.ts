@@ -12,6 +12,8 @@ import './styles/components.css';
 import './styles/compare.css';
 import './styles/responsive.css';
 
+const registrations = 'serviceWorker' in navigator ? navigator.serviceWorker.getRegistrations() : Promise.resolve([]);
+registrations.then((installed) => Promise.all(installed.map((registration) => registration.unregister()))).catch(() => undefined);
 registerSW({ onNeedRefresh() {}, onOfflineReady() {} });
 
 window.addEventListener('online', () => {

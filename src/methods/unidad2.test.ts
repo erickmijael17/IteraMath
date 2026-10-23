@@ -16,6 +16,11 @@ describe('sistemas directos', () => {
         expect(result.values[1]).toBeCloseTo(-2.5, 8);
         expect(result.values[2]).toBeCloseTo(7, 8);
         expect(result.secondary ?? '').toContain('3,614');
+        expect(result.graph.type).toBe('none');
+        expect(result.octave).toContain('f1 = f1/f1(1)');
+        expect(result.octave).toContain('f2 = -f2(1)*f1 + f2');
+        expect(result.octave).toContain('f1 = -f1(2)*f2 + f1');
+        expect(result.octave).toContain('x = [f1(4); f2(4); f3(4)]');
     });
 
     it('resuelve el taller y Cramer da lo mismo', () => {
@@ -23,6 +28,23 @@ describe('sistemas directos', () => {
         const cramer = solveCramer(TALLER);
         gauss.values.forEach((value, index) => expect(cramer.values[index]).toBeCloseTo(value, 8));
         expect(gauss.values[0]).toBeCloseTo(-0.034483, 5);
+        expect(cramer.graph.type).toBe('none');
+        expect(cramer.octave).toContain('DA = det(A)');
+        expect(cramer.octave).toContain('x1 = DX1/DA');
+        expect(cramer.values[1]).toBeCloseTo(1.068966, 5);
+        expect(cramer.values[2]).toBeCloseTo(-0.206897, 5);
+    });
+
+    it('Cramer de la semana 6 da -14.9, -29.5, 19.8', () => {
+        const result = solveCramer({
+            A: [[0.3, 0.52, 1], [0.5, 1, 1.9], [0.1, 0.3, 0.5]],
+            b: [-0.01, 0.67, -0.44],
+            pivot: false
+        });
+        expect(result.values[0]).toBeCloseTo(-14.9, 6);
+        expect(result.values[1]).toBeCloseTo(-29.5, 6);
+        expect(result.values[2]).toBeCloseTo(19.8, 6);
+        expect(result.octave).toContain('X1 = [-0.01 0.52 1; 0.67 1 1.9; -0.44 0.3 0.5]');
     });
 
     it('Gauss-Jordan coincide con Gauss', () => {
@@ -116,6 +138,25 @@ describe('interpolación', () => {
         expect(result.extra.bound).toBeCloseTo(0.0002384633, 6);
     });
 
+    it('Newton del ejemplo 4.4 aproxima en 2.1', () => {
+        const result = solveNewtonDivided({
+            points: [
+                { x: 2, y: 0.5103757 },
+                { x: 2.2, y: 0.5207843 },
+                { x: 2.4, y: 0.5104147 },
+                { x: 2.6, y: 0.4813306 },
+                { x: 2.8, y: 0.435916 }
+            ],
+            at: 2.1,
+            degree: 4,
+            form: 'progresiva'
+        });
+        expect(result.values[0]).toBeCloseTo(0.51558, 5);
+        expect(result.values[1]).toBeCloseTo(0.51817728, 6);
+        expect(result.values[2]).toBeCloseTo(0.51830626, 6);
+        expect(result.values[3]).toBeCloseTo(0.518293745, 8);
+    });
+
     it('Newton de sen(0.34) es regresivo', () => {
         const result = solveNewtonDivided({
             points: [
@@ -155,6 +196,16 @@ describe('ajuste y sistemas no lineales', () => {
         expect(result.values[0]).toBeCloseTo(2.48, 2);
         expect(result.values[1]).toBeCloseTo(2.36, 2);
         expect(result.values[2]).toBeCloseTo(1.86, 2);
+        const atSeven = solvePolyReg({
+            points: [
+                { x: 0, y: 2.1 }, { x: 1, y: 7.7 }, { x: 2, y: 13.6 },
+                { x: 3, y: 27.2 }, { x: 4, y: 40.9 }, { x: 5, y: 61.1 }
+            ],
+            degree: 2,
+            at: 7
+        });
+        expect(atSeven.extra.prediction).toBeCloseTo(110.168571, 4);
+        expect(atSeven.graph.type).toBe('curve');
     });
 
     it('la regresión múltiple cumple las ecuaciones normales', () => {
