@@ -1,16 +1,16 @@
 import { registerSW } from 'virtual:pwa-register';
-import { clearGraph, setupGraphToolbars } from './graph';
-import { MethodId } from './types/numerical';
-import { currentFields, setupMethodForm } from './ui/methodForm';
-import { isMethodId, METHOD_REGISTRY } from './ui/methodRegistry';
-import { clearResults, handleError, renderResults } from './ui/renderResults';
-import { setupTabs } from './ui/tabs';
-import './styles/variables.css';
-import './styles/base.css';
-import './styles/layout.css';
-import './styles/components.css';
-import './styles/compare.css';
-import './styles/responsive.css';
+import { clearGraph, setupGraphToolbars } from './graficas';
+import { MethodId } from './tipos/numerical';
+import { currentFields, setupMethodForm } from './interfaz/methodForm';
+import { isMethodId, METHOD_REGISTRY } from './interfaz/methodRegistry';
+import { clearResults, handleError, renderResults } from './interfaz/renderResults';
+import { setupTabs } from './interfaz/tabs';
+import './estilos/variables.css';
+import './estilos/base.css';
+import './estilos/layout.css';
+import './estilos/components.css';
+import './estilos/compare.css';
+import './estilos/responsive.css';
 
 const registrations = 'serviceWorker' in navigator ? navigator.serviceWorker.getRegistrations() : Promise.resolve([]);
 registrations.then((installed) => Promise.all(installed.map((registration) => registration.unregister()))).catch(() => undefined);
@@ -46,12 +46,12 @@ document.addEventListener('DOMContentLoaded', () => {
         clearGraph('plotly-canvas');
     });
 
-    import('./ui/history').then(({ setupHistoryNavigation }) => {
+    import('./interfaz/history').then(({ setupHistoryNavigation }) => {
         setupHistoryNavigation((input, result, method) => {
             renderResults(input, result, method as MethodId);
         });
     });
-    import('./ui/compare').then(({ setupCompareNavigation }) => {
+    import('./interfaz/compare').then(({ setupCompareNavigation }) => {
         setupCompareNavigation();
     });
 });
